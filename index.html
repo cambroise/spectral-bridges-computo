@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.6.2">
+<meta name="generator" content="quarto-1.6.3">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -263,7 +263,7 @@ ISSN 2824-7795</p>
       <div>
       <div class="quarto-title-meta-heading">Modified</div>
       <div class="quarto-title-meta-contents">
-        <p class="date-modified">July 18, 2024</p>
+        <p class="date-modified">July 22, 2024</p>
       </div>
     </div>
       
@@ -447,7 +447,7 @@ a_{kl}=
 <h2 data-number="3.2" class="anchored" data-anchor-id="algorithm"><span class="header-section-number">3.2</span> Algorithm</h2>
 <p>The Spectral Bridges algorithm first identifies local clusters to define Voronoï regions, computes edges with affinity weights between these regions, and ultimately cuts edges between regions with low inter-region density to determine the final clusters (See <a href="#alg-spectral-bridges">Algorithm 1</a> and <a href="#fig-steps" class="quarto-xref">Figure&nbsp;2</a>).</p>
 <p>In spectral clustering, the time complexity is usually dominated by the eigen-decomposition step, which is <span class="math inline">O(n^3)</span>. However, in the case of Spectral Bridges, the k-means algorithm has a time complexity of <span class="math inline">O(n \times m \times d)</span>. For datasets with large <span class="math inline">n</span>, this can be more significant than the <span class="math inline">O(m^3)</span> time complexity of the Spectral Bridges eigen-decomposition. As for the affinity matrix construction, there are <span class="math inline">m^2</span> coefficients to be calculated. Each <span class="math inline">a_{kl}</span> coefficient requires the computation of <span class="math inline">n_k + n_l</span> dot products as well as the norm <span class="math inline">\| \boldsymbol \mu_k-\boldsymbol \mu_l \|</span>, the latter often being negligeable. Assuming that the Voronoï regions are roughly balanced in cardinality, we have <span class="math inline">n_k \approx \frac{n}{m}</span>. Since <span class="math inline">m</span> should always be less than <span class="math inline">n</span>, therefore <span class="math inline">\frac{n}{m} &gt; 1</span> and the time complexity of the affinity matrix is <span class="math inline">O(\frac{n}{m} \times m^2 \times d) = O(n \times m \times d)</span> given the acceptable range of values for <span class="math inline">m</span>. Nonetheless, this is rarely the bottleneck.</p>
-<div id="alg-spectral-bridges" class="pseudocode-container" data-line-number-punc=":" data-indent-size="1.2em" data-alg-title="Algorithm" data-comment-delimiter="//" data-no-end="false" data-line-number="true" data-pseudocode-index="1">
+<div id="alg-spectral-bridges" class="pseudocode-container" data-comment-delimiter="//" data-indent-size="1.2em" data-pseudocode-index="1" data-line-number-punc=":" data-no-end="false" data-alg-title="Algorithm" data-line-number="true">
 <div class="pseudocode">
 \begin{algorithm} \caption{Spectral Bridges} \begin{algorithmic} \Procedure{SpectralBridges}{$X, k, m$} \Comment{$X$: input dataset, $k$: number of clusters, $m$: number of Voronoï regions} \State \textbf{Step 1: Vector Quantization} \State $\text{centroids}, \text{voronoiRegions} \gets$ \Call{KMeans}{$X, m$} \Comment{Initial centroids and Voronoi regions using k-means++} \State \textbf{Step 2: Affinity Computation} \State $A = \{g(a_{kl})\}_{kl} \gets$ \Call{Affinity}{$X, \text{centroids}, \text{voronoiRegions}$} \Comment{Compute affinity matrix $A$} \State \textbf{Step 3: Spectral Clustering} \Comment{Assign each region to a cluster} \State $\text{labels} \gets$ \Call{SpectralClustering}{$A, k$} \State \textbf{Step 4: Propagate} \Comment{Assign each data point to the cluster of its region} \State $\text{clusters} \gets$ \Call{Propagate}{$X, \text{labels}, \text{voronoiRegions}$} \State \Return $\text{clusters}$ \Comment{Return cluster labels for data points in $X$} \EndProcedure \end{algorithmic} \end{algorithm}
 </div>
@@ -936,46 +936,47 @@ B_{kl}- I_{kl} &amp;=&amp;  \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2 \|\boldsy
 <p>Taking a closer look at the second step of <a href="#alg-spectral-bridges">Algorithm 1</a>, that is the affinity matrix calculation with a <span class="math inline">O(n \times m \times d)</span> time complexity, most operations can be parallelized leaving a single loop, bundling together <span class="math inline">m^2</span> dot products into only <span class="math inline">m</span> matrix multiplications, thus allowing for an efficient construction in both high and low level programming languages. Though the complexity of the algorithm remains unchanged, libraries such as Basic Linear Algebra Subprograms can render the calculations orders of magnitude faster. Moreover, the symmetrical nature of the bridge affinity can be used to effectively halve the computation time.</p>
 <p>The calculation of the affinity matrix is highlighted by the Python code <a href="#lst-code-affinity" class="quarto-xref">Listing&nbsp;1</a>. Though it could be even more optimized, the following code snippet is approximately 200 times faster than a naive implementation on a small dataset comprised of <span class="math inline">n = 3594</span>, <span class="math inline">d = 2</span> points, and a value of <span class="math inline">m = 250</span>.</p>
 <p>Notice that the Python code is significantly faster than the R code.</p>
-<div class="cell">
+<div class="cell" data-python.reticulate="false">
 <div id="lst-code-affinity" class="python cell-code listing quarto-float quarto-figure quarto-figure-left anchored">
 <figure class="quarto-float quarto-float-lst figure">
 <figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-lst" id="lst-code-affinity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 Listing&nbsp;1: Python code for affinity matrix computation
 </figcaption>
 <div aria-describedby="lst-code-affinity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div class="sourceCode cell-code" id="lst-code-affinity"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="lst-code-affinity-1"><a href="#lst-code-affinity-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the affinity matrix</span></span>
-<span id="lst-code-affinity-2"><a href="#lst-code-affinity-2" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.empty((<span class="va">self</span>.n_nodes, <span class="va">self</span>.n_nodes))</span>
-<span id="lst-code-affinity-3"><a href="#lst-code-affinity-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-4"><a href="#lst-code-affinity-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Center each Voronoi region around its centroid</span></span>
-<span id="lst-code-affinity-5"><a href="#lst-code-affinity-5" aria-hidden="true" tabindex="-1"></a>X_centered <span class="op">=</span> [</span>
-<span id="lst-code-affinity-6"><a href="#lst-code-affinity-6" aria-hidden="true" tabindex="-1"></a>    X[kmeans.labels_ <span class="op">==</span> i] <span class="op">-</span> kmeans.cluster_centers_[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)</span>
-<span id="lst-code-affinity-7"><a href="#lst-code-affinity-7" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="lst-code-affinity-8"><a href="#lst-code-affinity-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-9"><a href="#lst-code-affinity-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Count the total number of points in each pair of regions</span></span>
-<span id="lst-code-affinity-10"><a href="#lst-code-affinity-10" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.array([X_centered[i].shape[<span class="dv">0</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)])</span>
-<span id="lst-code-affinity-11"><a href="#lst-code-affinity-11" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> counts[np.newaxis, :] <span class="op">+</span> counts[:, np.newaxis]</span>
-<span id="lst-code-affinity-12"><a href="#lst-code-affinity-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-13"><a href="#lst-code-affinity-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the segments between each pair of centroids and their squared Euclidean norm</span></span>
-<span id="lst-code-affinity-14"><a href="#lst-code-affinity-14" aria-hidden="true" tabindex="-1"></a>segments <span class="op">=</span> (</span>
-<span id="lst-code-affinity-15"><a href="#lst-code-affinity-15" aria-hidden="true" tabindex="-1"></a>    kmeans.cluster_centers_[np.newaxis, :] <span class="op">-</span> kmeans.cluster_centers_[:, np.newaxis]</span>
-<span id="lst-code-affinity-16"><a href="#lst-code-affinity-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="lst-code-affinity-17"><a href="#lst-code-affinity-17" aria-hidden="true" tabindex="-1"></a>dists <span class="op">=</span> np.einsum(<span class="st">"ijk,ijk-&gt;ij"</span>, segments, segments)</span>
-<span id="lst-code-affinity-18"><a href="#lst-code-affinity-18" aria-hidden="true" tabindex="-1"></a>np.fill_diagonal(dists, <span class="dv">1</span>)  <span class="co"># Avoid dividing by zero</span></span>
-<span id="lst-code-affinity-19"><a href="#lst-code-affinity-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-20"><a href="#lst-code-affinity-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign each row of the affinity matrix</span></span>
-<span id="lst-code-affinity-21"><a href="#lst-code-affinity-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes):</span>
-<span id="lst-code-affinity-22"><a href="#lst-code-affinity-22" aria-hidden="true" tabindex="-1"></a>    projs <span class="op">=</span> np.maximum(np.dot(X_centered[i], segments[i].T), <span class="dv">0</span>)</span>
-<span id="lst-code-affinity-23"><a href="#lst-code-affinity-23" aria-hidden="true" tabindex="-1"></a>    affinity[i] <span class="op">=</span> np.einsum(<span class="st">"ij,ij-&gt;j"</span>, projs, projs)</span>
-<span id="lst-code-affinity-24"><a href="#lst-code-affinity-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-25"><a href="#lst-code-affinity-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Symmetrize the matrix and normalize, as well as taking the element-wise square root</span></span>
-<span id="lst-code-affinity-26"><a href="#lst-code-affinity-26" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.sqrt(affinity <span class="op">+</span> affinity.T) <span class="op">/</span> (np.sqrt(counts) <span class="op">*</span> dists)</span>
-<span id="lst-code-affinity-27"><a href="#lst-code-affinity-27" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">-=</span> <span class="fl">0.5</span> <span class="op">*</span> affinity.<span class="bu">max</span>()  <span class="co"># For numerical stability</span></span>
-<span id="lst-code-affinity-28"><a href="#lst-code-affinity-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-29"><a href="#lst-code-affinity-29" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the exponential transformation</span></span>
-<span id="lst-code-affinity-30"><a href="#lst-code-affinity-30" aria-hidden="true" tabindex="-1"></a>q10, q90 <span class="op">=</span> np.quantile(affinity, [<span class="fl">0.1</span>, <span class="fl">0.9</span>])</span>
-<span id="lst-code-affinity-31"><a href="#lst-code-affinity-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-32"><a href="#lst-code-affinity-32" aria-hidden="true" tabindex="-1"></a>gamma <span class="op">=</span> np.log(<span class="va">self</span>.M) <span class="op">/</span> (q90 <span class="op">-</span> q10)</span>
-<span id="lst-code-affinity-33"><a href="#lst-code-affinity-33" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.exp(gamma <span class="op">*</span> affinity)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="lst-code-affinity"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="lst-code-affinity-1"><a href="#lst-code-affinity-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-2"><a href="#lst-code-affinity-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the affinity matrix</span></span>
+<span id="lst-code-affinity-3"><a href="#lst-code-affinity-3" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.empty((<span class="va">self</span>.n_nodes, <span class="va">self</span>.n_nodes))</span>
+<span id="lst-code-affinity-4"><a href="#lst-code-affinity-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-5"><a href="#lst-code-affinity-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Center each Voronoi region around its centroid</span></span>
+<span id="lst-code-affinity-6"><a href="#lst-code-affinity-6" aria-hidden="true" tabindex="-1"></a>X_centered <span class="op">=</span> [</span>
+<span id="lst-code-affinity-7"><a href="#lst-code-affinity-7" aria-hidden="true" tabindex="-1"></a>    X[kmeans.labels_ <span class="op">==</span> i] <span class="op">-</span> kmeans.cluster_centers_[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)</span>
+<span id="lst-code-affinity-8"><a href="#lst-code-affinity-8" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="lst-code-affinity-9"><a href="#lst-code-affinity-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-10"><a href="#lst-code-affinity-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Count the total number of points in each pair of regions</span></span>
+<span id="lst-code-affinity-11"><a href="#lst-code-affinity-11" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.array([X_centered[i].shape[<span class="dv">0</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)])</span>
+<span id="lst-code-affinity-12"><a href="#lst-code-affinity-12" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> counts[np.newaxis, :] <span class="op">+</span> counts[:, np.newaxis]</span>
+<span id="lst-code-affinity-13"><a href="#lst-code-affinity-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-14"><a href="#lst-code-affinity-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the segments between each pair of centroids and their squared Euclidean norm</span></span>
+<span id="lst-code-affinity-15"><a href="#lst-code-affinity-15" aria-hidden="true" tabindex="-1"></a>segments <span class="op">=</span> (</span>
+<span id="lst-code-affinity-16"><a href="#lst-code-affinity-16" aria-hidden="true" tabindex="-1"></a>    kmeans.cluster_centers_[np.newaxis, :] <span class="op">-</span> kmeans.cluster_centers_[:, np.newaxis]</span>
+<span id="lst-code-affinity-17"><a href="#lst-code-affinity-17" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="lst-code-affinity-18"><a href="#lst-code-affinity-18" aria-hidden="true" tabindex="-1"></a>dists <span class="op">=</span> np.einsum(<span class="st">"ijk,ijk-&gt;ij"</span>, segments, segments)</span>
+<span id="lst-code-affinity-19"><a href="#lst-code-affinity-19" aria-hidden="true" tabindex="-1"></a>np.fill_diagonal(dists, <span class="dv">1</span>)  <span class="co"># Avoid dividing by zero</span></span>
+<span id="lst-code-affinity-20"><a href="#lst-code-affinity-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-21"><a href="#lst-code-affinity-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign each row of the affinity matrix</span></span>
+<span id="lst-code-affinity-22"><a href="#lst-code-affinity-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes):</span>
+<span id="lst-code-affinity-23"><a href="#lst-code-affinity-23" aria-hidden="true" tabindex="-1"></a>    projs <span class="op">=</span> np.maximum(np.dot(X_centered[i], segments[i].T), <span class="dv">0</span>)</span>
+<span id="lst-code-affinity-24"><a href="#lst-code-affinity-24" aria-hidden="true" tabindex="-1"></a>    affinity[i] <span class="op">=</span> np.einsum(<span class="st">"ij,ij-&gt;j"</span>, projs, projs)</span>
+<span id="lst-code-affinity-25"><a href="#lst-code-affinity-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-26"><a href="#lst-code-affinity-26" aria-hidden="true" tabindex="-1"></a><span class="co"># Symmetrize the matrix and normalize, as well as taking the element-wise square root</span></span>
+<span id="lst-code-affinity-27"><a href="#lst-code-affinity-27" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.sqrt(affinity <span class="op">+</span> affinity.T) <span class="op">/</span> (np.sqrt(counts) <span class="op">*</span> dists)</span>
+<span id="lst-code-affinity-28"><a href="#lst-code-affinity-28" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">-=</span> <span class="fl">0.5</span> <span class="op">*</span> affinity.<span class="bu">max</span>()  <span class="co"># For numerical stability</span></span>
+<span id="lst-code-affinity-29"><a href="#lst-code-affinity-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-30"><a href="#lst-code-affinity-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the exponential transformation</span></span>
+<span id="lst-code-affinity-31"><a href="#lst-code-affinity-31" aria-hidden="true" tabindex="-1"></a>q10, q90 <span class="op">=</span> np.quantile(affinity, [<span class="fl">0.1</span>, <span class="fl">0.9</span>])</span>
+<span id="lst-code-affinity-32"><a href="#lst-code-affinity-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="lst-code-affinity-33"><a href="#lst-code-affinity-33" aria-hidden="true" tabindex="-1"></a>gamma <span class="op">=</span> np.log(<span class="va">self</span>.M) <span class="op">/</span> (q90 <span class="op">-</span> q10)</span>
+<span id="lst-code-affinity-34"><a href="#lst-code-affinity-34" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.exp(gamma <span class="op">*</span> affinity)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </figure>
 </div>
@@ -1012,12 +1013,10 @@ attached base packages:
 [1] stats     graphics  grDevices datasets  utils     methods   base     
 
 loaded via a namespace (and not attached):
- [1] digest_0.6.35     fastmap_1.1.1     xfun_0.43         Matrix_1.6-5     
- [5] lattice_0.22-5    reticulate_1.36.1 knitr_1.46        htmltools_0.5.8.1
- [9] png_0.1-8         rmarkdown_2.26    cli_3.6.2         grid_4.4.0       
-[13] renv_1.0.7        compiler_4.4.0    tools_4.4.0       evaluate_0.23    
-[17] Rcpp_1.0.12       yaml_2.3.8        rlang_1.1.3       jsonlite_1.8.8   
-[21] htmlwidgets_1.6.4</code></pre>
+ [1] htmlwidgets_1.6.4 compiler_4.4.0    fastmap_1.1.1     cli_3.6.2        
+ [5] htmltools_0.5.7   tools_4.4.0       yaml_2.3.8        rmarkdown_2.26   
+ [9] knitr_1.45        jsonlite_1.8.8    xfun_0.42         digest_0.6.34    
+[13] rlang_1.1.3       renv_1.0.7        evaluate_0.23    </code></pre>
 </div>
 </div>
 <!-- -->
@@ -1984,61 +1983,60 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-469"><a href="#cb3-469" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-470"><a href="#cb3-470" aria-hidden="true" tabindex="-1"></a>Notice that the Python code is significantly faster than the R code.</span>
 <span id="cb3-471"><a href="#cb3-471" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-474"><a href="#cb3-474" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
-<span id="cb3-475"><a href="#cb3-475" aria-hidden="true" tabindex="-1"></a><span class="co">#| lst-label: lst-code-affinity</span></span>
-<span id="cb3-476"><a href="#cb3-476" aria-hidden="true" tabindex="-1"></a><span class="co">#| lst-cap: "Python code for affinity matrix computation"</span></span>
-<span id="cb3-477"><a href="#cb3-477" aria-hidden="true" tabindex="-1"></a><span class="co">#| echo: true</span></span>
-<span id="cb3-478"><a href="#cb3-478" aria-hidden="true" tabindex="-1"></a><span class="co">#| eval: false</span></span>
-<span id="cb3-479"><a href="#cb3-479" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-480"><a href="#cb3-480" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-481"><a href="#cb3-481" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the affinity matrix</span></span>
-<span id="cb3-482"><a href="#cb3-482" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.empty((<span class="va">self</span>.n_nodes, <span class="va">self</span>.n_nodes))</span>
-<span id="cb3-483"><a href="#cb3-483" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-484"><a href="#cb3-484" aria-hidden="true" tabindex="-1"></a><span class="co"># Center each Voronoi region around its centroid</span></span>
-<span id="cb3-485"><a href="#cb3-485" aria-hidden="true" tabindex="-1"></a>X_centered <span class="op">=</span> [</span>
-<span id="cb3-486"><a href="#cb3-486" aria-hidden="true" tabindex="-1"></a>    X[kmeans.labels_ <span class="op">==</span> i] <span class="op">-</span> kmeans.cluster_centers_[i] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)</span>
-<span id="cb3-487"><a href="#cb3-487" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb3-488"><a href="#cb3-488" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-489"><a href="#cb3-489" aria-hidden="true" tabindex="-1"></a><span class="co"># Count the total number of points in each pair of regions</span></span>
-<span id="cb3-490"><a href="#cb3-490" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.array([X_centered[i].shape[<span class="dv">0</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)])</span>
-<span id="cb3-491"><a href="#cb3-491" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> counts[np.newaxis, :] <span class="op">+</span> counts[:, np.newaxis]</span>
-<span id="cb3-492"><a href="#cb3-492" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-493"><a href="#cb3-493" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute the segments between each pair of centroids and their squared Euclidean norm</span></span>
-<span id="cb3-494"><a href="#cb3-494" aria-hidden="true" tabindex="-1"></a>segments <span class="op">=</span> (</span>
-<span id="cb3-495"><a href="#cb3-495" aria-hidden="true" tabindex="-1"></a>    kmeans.cluster_centers_[np.newaxis, :] <span class="op">-</span> kmeans.cluster_centers_[:, np.newaxis]</span>
-<span id="cb3-496"><a href="#cb3-496" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb3-497"><a href="#cb3-497" aria-hidden="true" tabindex="-1"></a>dists <span class="op">=</span> np.einsum(<span class="st">"ijk,ijk-&gt;ij"</span>, segments, segments)</span>
-<span id="cb3-498"><a href="#cb3-498" aria-hidden="true" tabindex="-1"></a>np.fill_diagonal(dists, <span class="dv">1</span>)  <span class="co"># Avoid dividing by zero</span></span>
-<span id="cb3-499"><a href="#cb3-499" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-500"><a href="#cb3-500" aria-hidden="true" tabindex="-1"></a><span class="co"># Assign each row of the affinity matrix</span></span>
-<span id="cb3-501"><a href="#cb3-501" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes):</span>
-<span id="cb3-502"><a href="#cb3-502" aria-hidden="true" tabindex="-1"></a>    projs <span class="op">=</span> np.maximum(np.dot(X_centered[i], segments[i].T), <span class="dv">0</span>)</span>
-<span id="cb3-503"><a href="#cb3-503" aria-hidden="true" tabindex="-1"></a>    affinity[i] <span class="op">=</span> np.einsum(<span class="st">"ij,ij-&gt;j"</span>, projs, projs)</span>
-<span id="cb3-504"><a href="#cb3-504" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-505"><a href="#cb3-505" aria-hidden="true" tabindex="-1"></a><span class="co"># Symmetrize the matrix and normalize, as well as taking the element-wise square root</span></span>
-<span id="cb3-506"><a href="#cb3-506" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.sqrt(affinity <span class="op">+</span> affinity.T) <span class="op">/</span> (np.sqrt(counts) <span class="op">*</span> dists)</span>
-<span id="cb3-507"><a href="#cb3-507" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">-=</span> <span class="fl">0.5</span> <span class="op">*</span> affinity.<span class="bu">max</span>()  <span class="co"># For numerical stability</span></span>
-<span id="cb3-508"><a href="#cb3-508" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-509"><a href="#cb3-509" aria-hidden="true" tabindex="-1"></a><span class="co"># Apply the exponential transformation</span></span>
-<span id="cb3-510"><a href="#cb3-510" aria-hidden="true" tabindex="-1"></a>q10, q90 <span class="op">=</span> np.quantile(affinity, [<span class="fl">0.1</span>, <span class="fl">0.9</span>])</span>
-<span id="cb3-511"><a href="#cb3-511" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-512"><a href="#cb3-512" aria-hidden="true" tabindex="-1"></a>gamma <span class="op">=</span> np.log(<span class="va">self</span>.M) <span class="op">/</span> (q90 <span class="op">-</span> q10)</span>
-<span id="cb3-513"><a href="#cb3-513" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.exp(gamma <span class="op">*</span> affinity)</span>
-<span id="cb3-514"><a href="#cb3-514" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-472"><a href="#cb3-472" aria-hidden="true" tabindex="-1"></a><span class="in">```{python, python.reticulate = FALSE}</span></span>
+<span id="cb3-473"><a href="#cb3-473" aria-hidden="true" tabindex="-1"></a><span class="in">#| lst-label: lst-code-affinity</span></span>
+<span id="cb3-474"><a href="#cb3-474" aria-hidden="true" tabindex="-1"></a><span class="in">#| lst-cap: "Python code for affinity matrix computation"</span></span>
+<span id="cb3-475"><a href="#cb3-475" aria-hidden="true" tabindex="-1"></a><span class="in">#| echo: true</span></span>
+<span id="cb3-476"><a href="#cb3-476" aria-hidden="true" tabindex="-1"></a><span class="in">#| eval: false</span></span>
+<span id="cb3-477"><a href="#cb3-477" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-478"><a href="#cb3-478" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-479"><a href="#cb3-479" aria-hidden="true" tabindex="-1"></a><span class="in"># Initialize the affinity matrix</span></span>
+<span id="cb3-480"><a href="#cb3-480" aria-hidden="true" tabindex="-1"></a><span class="in">affinity = np.empty((self.n_nodes, self.n_nodes))</span></span>
+<span id="cb3-481"><a href="#cb3-481" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-482"><a href="#cb3-482" aria-hidden="true" tabindex="-1"></a><span class="in"># Center each Voronoi region around its centroid</span></span>
+<span id="cb3-483"><a href="#cb3-483" aria-hidden="true" tabindex="-1"></a><span class="in">X_centered = [</span></span>
+<span id="cb3-484"><a href="#cb3-484" aria-hidden="true" tabindex="-1"></a><span class="in">    X[kmeans.labels_ == i] - kmeans.cluster_centers_[i] for i in range(self.n_nodes)</span></span>
+<span id="cb3-485"><a href="#cb3-485" aria-hidden="true" tabindex="-1"></a><span class="in">]</span></span>
+<span id="cb3-486"><a href="#cb3-486" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-487"><a href="#cb3-487" aria-hidden="true" tabindex="-1"></a><span class="in"># Count the total number of points in each pair of regions</span></span>
+<span id="cb3-488"><a href="#cb3-488" aria-hidden="true" tabindex="-1"></a><span class="in">counts = np.array([X_centered[i].shape[0] for i in range(self.n_nodes)])</span></span>
+<span id="cb3-489"><a href="#cb3-489" aria-hidden="true" tabindex="-1"></a><span class="in">counts = counts[np.newaxis, :] + counts[:, np.newaxis]</span></span>
+<span id="cb3-490"><a href="#cb3-490" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-491"><a href="#cb3-491" aria-hidden="true" tabindex="-1"></a><span class="in"># Compute the segments between each pair of centroids and their squared Euclidean norm</span></span>
+<span id="cb3-492"><a href="#cb3-492" aria-hidden="true" tabindex="-1"></a><span class="in">segments = (</span></span>
+<span id="cb3-493"><a href="#cb3-493" aria-hidden="true" tabindex="-1"></a><span class="in">    kmeans.cluster_centers_[np.newaxis, :] - kmeans.cluster_centers_[:, np.newaxis]</span></span>
+<span id="cb3-494"><a href="#cb3-494" aria-hidden="true" tabindex="-1"></a><span class="in">)</span></span>
+<span id="cb3-495"><a href="#cb3-495" aria-hidden="true" tabindex="-1"></a><span class="in">dists = np.einsum("ijk,ijk-&gt;ij", segments, segments)</span></span>
+<span id="cb3-496"><a href="#cb3-496" aria-hidden="true" tabindex="-1"></a><span class="in">np.fill_diagonal(dists, 1)  # Avoid dividing by zero</span></span>
+<span id="cb3-497"><a href="#cb3-497" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-498"><a href="#cb3-498" aria-hidden="true" tabindex="-1"></a><span class="in"># Assign each row of the affinity matrix</span></span>
+<span id="cb3-499"><a href="#cb3-499" aria-hidden="true" tabindex="-1"></a><span class="in">for i in range(self.n_nodes):</span></span>
+<span id="cb3-500"><a href="#cb3-500" aria-hidden="true" tabindex="-1"></a><span class="in">    projs = np.maximum(np.dot(X_centered[i], segments[i].T), 0)</span></span>
+<span id="cb3-501"><a href="#cb3-501" aria-hidden="true" tabindex="-1"></a><span class="in">    affinity[i] = np.einsum("ij,ij-&gt;j", projs, projs)</span></span>
+<span id="cb3-502"><a href="#cb3-502" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-503"><a href="#cb3-503" aria-hidden="true" tabindex="-1"></a><span class="in"># Symmetrize the matrix and normalize, as well as taking the element-wise square root</span></span>
+<span id="cb3-504"><a href="#cb3-504" aria-hidden="true" tabindex="-1"></a><span class="in">affinity = np.sqrt(affinity + affinity.T) / (np.sqrt(counts) * dists)</span></span>
+<span id="cb3-505"><a href="#cb3-505" aria-hidden="true" tabindex="-1"></a><span class="in">affinity -= 0.5 * affinity.max()  # For numerical stability</span></span>
+<span id="cb3-506"><a href="#cb3-506" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-507"><a href="#cb3-507" aria-hidden="true" tabindex="-1"></a><span class="in"># Apply the exponential transformation</span></span>
+<span id="cb3-508"><a href="#cb3-508" aria-hidden="true" tabindex="-1"></a><span class="in">q10, q90 = np.quantile(affinity, [0.1, 0.9])</span></span>
+<span id="cb3-509"><a href="#cb3-509" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-510"><a href="#cb3-510" aria-hidden="true" tabindex="-1"></a><span class="in">gamma = np.log(self.M) / (q90 - q10)</span></span>
+<span id="cb3-511"><a href="#cb3-511" aria-hidden="true" tabindex="-1"></a><span class="in">affinity = np.exp(gamma * affinity)</span></span>
+<span id="cb3-512"><a href="#cb3-512" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb3-513"><a href="#cb3-513" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-514"><a href="#cb3-514" aria-hidden="true" tabindex="-1"></a>\newpage  </span>
 <span id="cb3-515"><a href="#cb3-515" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb3-516"><a href="#cb3-516" aria-hidden="true" tabindex="-1"></a>\newpage  </span>
-<span id="cb3-517"><a href="#cb3-517" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb3-518"><a href="#cb3-518" aria-hidden="true" tabindex="-1"></a><span class="fu"># References {.unnumbered}</span></span>
-<span id="cb3-519"><a href="#cb3-519" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-520"><a href="#cb3-520" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
-<span id="cb3-521"><a href="#cb3-521" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-516"><a href="#cb3-516" aria-hidden="true" tabindex="-1"></a><span class="fu"># References {.unnumbered}</span></span>
+<span id="cb3-517"><a href="#cb3-517" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-518"><a href="#cb3-518" aria-hidden="true" tabindex="-1"></a>::: {#refs}</span>
+<span id="cb3-519"><a href="#cb3-519" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb3-520"><a href="#cb3-520" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-521"><a href="#cb3-521" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session information {.appendix .unnumbered}</span></span>
 <span id="cb3-522"><a href="#cb3-522" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-523"><a href="#cb3-523" aria-hidden="true" tabindex="-1"></a><span class="fu"># Session information {.appendix .unnumbered}</span></span>
-<span id="cb3-524"><a href="#cb3-524" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-525"><a href="#cb3-525" aria-hidden="true" tabindex="-1"></a><span class="in">```{r session-info}</span></span>
-<span id="cb3-526"><a href="#cb3-526" aria-hidden="true" tabindex="-1"></a><span class="in">sessionInfo()</span></span>
-<span id="cb3-527"><a href="#cb3-527" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-</code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
+<span id="cb3-523"><a href="#cb3-523" aria-hidden="true" tabindex="-1"></a><span class="in">```{r session-info}</span></span>
+<span id="cb3-524"><a href="#cb3-524" aria-hidden="true" tabindex="-1"></a><span class="in">sessionInfo()</span></span>
+<span id="cb3-525"><a href="#cb3-525" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span></code><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
 <script>
