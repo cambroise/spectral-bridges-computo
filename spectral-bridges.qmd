@@ -44,15 +44,9 @@ editor:
 ---
 
 
-```{r library-install, echo=FALSE,warning=FALSE,python.reticulate=FALSE}
-install.pacakges(reticulate)
-library(reticulate)
-```
-
-
 # Abstract
 
-In this paper, Spectral Bridges, a novel clustering algorithm, is introduced. This algorithm builds upon the traditional k-means and spectral clustering frameworks by subdividing data into small Voronoï regions, which are subsequently merged according to a connectivity measure. Drawing inspiration from Support Vector Machine's margin concept, a non-parametric clustering approach is proposed, building an affinity margin between each pair of Voronoï regions. This approach is characterized by minimal hyperparameters and delineation of intricate, non-convex cluster structures.
+In this paper, Spectral Bridges, a novel clustering algorithm, is introduced. This algorithm builds upon the traditional k-means and spectral clustering frameworks by subdividing data into small Voronoï regions, which are subsequently merged according to a connectivity measure. Drawing inspiration from Support Vector Machine's margin concept, a non-parametric clustering approach is proposed, building an affinity margin between each pair of Voronoï regions. This approach is characterized by minimal hyperparameter sensitivity and delineation of intricate, non-convex cluster structures.
 
 The numerical experiments underscore Spectral Bridges as a fast, robust, and versatile tool for  clustering tasks spanning diverse domains. Its efficacy extends to large-scale scenarios encompassing both real-world and synthetic datasets. 
 
@@ -142,7 +136,7 @@ $$
 Considering two centroïds, the normalized average of the difference betweenn Bridge and balls inertia (see [Appendix](#gain)) constitutes the basis of our affinity measure between two regions:
 $$
 \begin{aligned}
-\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2 \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4},\\
+\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2 + \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4},\\
 &=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k \cup \mathcal V_l} \alpha_i^2}{n_k+n_l},
 \end{aligned}
 $$
@@ -201,7 +195,9 @@ $$
 
 where $q_{10}$ and $q_{90}$ are respectively the 10th and 90th percentiles of the original affinity matrix and $M > 1$. Thus, since the transformation is order-preserving, the 90th percentile of the newly constructed matrix is $M$ times greater than the 10th percentile. By default, $M$ is arbitrarily set to a large value of $10^4$.
 
-The inclusion of the square root can be understood as redefining the affinity measure. Instead of considering the variance and the squared Euclidean norm, we interpret the affinity as the ratio between the standard deviation and the length of the segment connecting two centroids. This reinterpretation greatly enhances numerical stability, contributing to more reliable clustering results.
+The inclusion of the square root can be understood as redefining the affinity measure. Instead of considering the variance and the squared Euclidean norm, we interpret the affinity as the ratio between the standard deviation and the length of the segment connecting two centroids.
+
+This regularization is crucial: with a bounded affinity metric, exponentiation enhances the separation between low and high-density regions, controlled by a scaling parameter, as in traditional spectral clustering. Redefining the metric with a square root helps mitigate a converse issue, where machine error can cause numerical instability when solving the Laplacian eigenproblem, especially if values become too large. Since the range of affinity values can become too wide when the initial ratio between the largest and smallest non-zero unscaled bridge affinities is high, applying the square root reduces the maximum values in the affinity matrix while preserving the metric's interpretability and distance-like properties; importantly, this adjustment is not intended for outlier detection.
 
 ## Algorithm
 
@@ -309,7 +305,7 @@ All experiments were conducted on an Archlinux machine with Linux 6.9.3 Kernel, 
 The hyperparameters of the Spectral Bridges algorithm were based on the size of each dataset, $n$, and the number of clusters, $K$.
 A larger number of clusters typically suggests that a higher value for the number of Voronoï regions is optimal. Conversely, using a high number of Voronoï regions for a small dataset might result in nearly empty regions that do not adequately represent any local structure.
 
-A good yet not very precise way of setting the number of Voronoï regions $m$ is to observe the Within Cluster Sum of Squares (WCSS) or inertia in a way akin to the elbow method. Since $m$ should be set to a value strictly greater than $K$, we plot the WCSS for varying values of $m$, and find a value such that the WCSS-$m$ relationship becomes quasi-linear.
+A good yet not very precise way of setting the number of Voronoï regions $m$ is to observe the Within Cluster Sum of Squares (WCSS) or inertia in a way akin to the elbow method. Since $m$ should be set to a value strictly greater than $K$, we plot the WCSS for varying values of $m$, and find a value such that the WCSS-$m$ relationship becomes quasi-linear, which often occurs after the inflection point.
 
 By adjusting $m$ in this manner, we aim to balance the need for detailed representation with the risk of overfitting, ensuring that each Voronoï region meaningfully captures the underlying data distribution. The sensitivity or lack thereof is illustrated later on by @fig-m-vs-score.
 
@@ -330,13 +326,19 @@ Average time taken per model fit.
 
 ## Accuracy
 
-The algorithm's accuracy was first evaluated on the MNIST dataset. Metrics were collected to compare our method with k-means++, EM, and Ward clustering. Metric were estimated by taking the empirical average over 10 consecutive runs with the same random seed for each method. Since our computational capabilites were too limited, a sample of 20,000 (one third) data points was chosen at random for each iteration.
+The algorithm's accuracy was first evaluated on the MNIST dataset. Metrics were collected to compare our method with k-means++, EM, and Ward clustering. Metric were estimated by taking the empirical average over 10 consecutive runs with a random seed set for reproducibility purposes.
 
-Let $h$ denote the embedding dimension of the dataset. Spectral Bridges was tested both on the raw MNIST dataset without preprocessing ($h = 784$) and after reducing its dimension using PCA to $h \in \{8, 16, 32, 64\}$ (see @fig-mnist-scores).
+Let $h$ denote the embedding dimension of the dataset. Spectral Bridges was tested both on the raw MNIST dataset without preprocessing ($h = 784$) and after reducing its dimension using PCA to $h \in \{8, 16, 32, 64\}$ (see @fig-mnist-pca-scores).
 
-![ARI and NMI scores of k-means++ (blue), EM (green), Ward Clustering (red), and Spectral Bridges (purple) on PCA embedding and full MNIST.](figures/mnist_summary.pdf){#fig-mnist-scores}
+![ARI and NMI scores of k-means++ (blue), EM (green), Ward Clustering (red), and Spectral Bridges (purple) on PCA embedding and full MNIST.](figures/mnist_pca_summary.pdf){#fig-mnist-pca-scores}
 
-For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note that the projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with PCA, $h = 32$ and 250 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.
+Furthermore, the proposed algorithm was also tested on the same MNIST dataset after reducing its dimension to $h \in \{2, 4, 8, 16\}$ with UMAP [@McInnes2018], one of the most advanced non-linear dimension reduction algorithm (see @fig-mnist-umap-scores).
+
+![ARI and NMI scores of k-means++ (blue), EM (green), Ward Clustering (red), and Spectral Bridges (purple) on UMAP embedding](figures/mnist_umap_summary.pdf){#fig-mnist-umap-scores}
+
+Note the Spectral Bridges is substantially better than other traditional methods and shines even with quite simple dimension reduction algorithms.
+
+For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with PCA, $h = 32$ and 250 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.
 
 ::: {#fig-MNIST layout-ncol=3}
 
@@ -393,7 +395,14 @@ Three representations of the algorithm's predicted cluster centers are displayed
 
 ## Hyperparameter values effect on accuracy
 
-To better understand and measure the significance of choosing the right values for the hyperparameters of the proposed algorithm, that it to say the number of Voronoï regions $m$, Spectral Bridges was run on the PCA $h = 32$ embedded MNIST dataset with varying values of $m \in \{10, 120, 230, 340, 450, 560, 670, 780, 890, 1000 \}$. The case $m = 10$ is equivalent to the k-means++ algorithm. ARI and NMI scores are recorded over 20 consecutive iterations and subsequently plotted. As shown by @fig-m-vs-score, the accuracy seems to be consistently increasing with values of $m$, although the largest observed gap occurs between values of $m = 10$ and $m = 120$, indicating a tremendous improvement over the classical k-means++ framework even for empirically suboptimal hyperparameter values. 
+The proposed algorithm inputs three parameters: the number of clusters $K$, the number of Voronoï regions $m$, as well as a scaling parameter used in the spectral clustering phase. 
+
+Metrics such as the Gap Statistic could be a possible approach to determine the number of clusters. Comparing the total within-cluster variation for different numbers of clusters with that expected under a null reference distribution of the data, the optimal value of $K$ is where the observed clustering yields the largest gap statistic.
+Another approach could leverage the Laplacian's eingengap, as in traditional spectral clustering [@von2007tutorial]. $K$ would here be chosen to maximize the difference between the $(K + 1)$-th and $K$-th eigenvalues sorted in ascending order.
+
+The same technique could also be used to estimate the optimal value for the scaling parameter; other methods involve local scaling which empirically does not translate well to the bridge affinity [@zelnik2004self].
+
+At last, the choice of the the number of Voronoï regions $m$ has been discussed previously. To better grasp the sensitivity regarding this parameter, Spectral Bridges was run on the PCA $h = 32$ embedded MNIST dataset with varying values of $m \in \{10, 120, 230, 340, 450, 560, 670, 780, 890, 1000 \}$. The case $m = 10$ is equivalent to the k-means++ algorithm. ARI and NMI scores are recorded over 20 consecutive iterations and subsequently plotted. As shown by @fig-m-vs-score, the accuracy seems to be consistently increasing with values of $m$, with the largest observed gap occurring between values of $m = 10$ and $m = 120$, and flattening thereafter, indicating a tremendous improvement over the classical k-means++ framework even for empirically suboptimal hyperparameter values.
 
 ![ARI and NMI scores of Spectral Bridges with varying values of $m$.](figures/nodes_vs_score.pdf){#fig-m-vs-score}
 
@@ -433,7 +442,7 @@ The last term may be decomposed in two parts corresponding to the points of the 
 
 $$
 \begin{aligned}
-\sum_{i \mid t_i\in ]0,1[} \|\boldsymbol x_i - \boldsymbol p_{kl}(\boldsymbol x_i)\|^2 &= &\sum_{i \mid t_i\in ]0,\frac{1}{2}[} \|\boldsymbol x_i - \boldsymbol p_{kl}(\boldsymbol x_i)\|^2 + \sum_{i \mid t_i\in [\frac{1}{2},1[} \|\boldsymbol x_i - \boldsymbol p_{kl}(\boldsymbol x_i)\|^2\\
+\sum_{i \mid t_i\in ]0,1[} \|\boldsymbol x_i - \boldsymbol p_{kl}(\boldsymbol x_i)\|^2 &=& \sum_{i \mid t_i\in ]0,\frac{1}{2}[} \|\boldsymbol x_i - \boldsymbol p_{kl}(\boldsymbol x_i)\|^2 + \sum_{i \mid t_i\in [\frac{1}{2},1[} \|\boldsymbol x_i - \boldsymbol p_{kl}(\boldsymbol x_i)\|^2\\
 \end{aligned}
 $$
 and each part further decomposed using Pythagore 
@@ -456,7 +465,7 @@ $$
 \begin{aligned}
 B_{kl}- I_{kl} &=&  \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2 \|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2 + \sum_{i \mid t_i\in ]\frac{1}{2},1[} (1-t_i)^2 \|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2,\\
 \frac{B_{kl}- I_{kl}}{\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2  + \sum_{i \mid t_i\in ]\frac{1}{2},1[} (1-t_i)^2, \\
-\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2  \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4}.
+\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2 + \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4}.
 \end{aligned}
 $$
 
@@ -483,36 +492,40 @@ Notice that the Python code is significantly faster than the R code.
 #| echo: true
 #| eval: false
 
-
-# Initialize the affinity matrix
+#Initialize the matrix as empty
 affinity = np.empty((self.n_nodes, self.n_nodes))
 
-# Center each Voronoi region around its centroid
+#Center each region
 X_centered = [
-    X[kmeans.labels_ == i] - kmeans.cluster_centers_[i] for i in range(self.n_nodes)
+    np.array(
+        X[kmeans.labels_ == i] - kmeans.cluster_centers_[i],
+        dtype=np.float32,
+        order="F",
+    )
+    for i in range(self.n_nodes)
 ]
 
-# Count the total number of points in each pair of regions
+#Cardinal calculation
 counts = np.array([X_centered[i].shape[0] for i in range(self.n_nodes)])
-counts = counts[np.newaxis, :] + counts[:, np.newaxis]
+counts = counts[None, :] + counts[:, None]
 
-# Compute the segments between each pair of centroids and their squared Euclidean norm
-segments = (
-    kmeans.cluster_centers_[np.newaxis, :] - kmeans.cluster_centers_[:, np.newaxis]
-)
-dists = np.einsum("ijk,ijk->ij", segments, segments)
-np.fill_diagonal(dists, 1)  # Avoid dividing by zero
-
-# Assign each row of the affinity matrix
+#Calculate the affinity
 for i in range(self.n_nodes):
-    projs = np.maximum(np.dot(X_centered[i], segments[i].T), 0)
+    segments = np.asfortranarray(
+        kmeans.cluster_centers_ - kmeans.cluster_centers_[i]
+    )
+    dists = np.einsum("ij,ij->i", segments, segments)
+    dists[i] = 1
+
+    projs = sgemm(1.0, X_centered[i], segments, trans_b=True) / dists
+    np.clip(projs, 0, None, out=projs)
+
     affinity[i] = np.einsum("ij,ij->j", projs, projs)
 
-# Symmetrize the matrix and normalize, as well as taking the element-wise square root
-affinity = np.sqrt(affinity + affinity.T) / (np.sqrt(counts) * dists)
-affinity -= 0.5 * affinity.max()  # For numerical stability
+affinity = np.sqrt((affinity + affinity.T) / counts)
+affinity -= 0.5 * affinity.max()
 
-# Apply the exponential transformation
+#Scale and exponentiate
 q10, q90 = np.quantile(affinity, [0.1, 0.9])
 
 gamma = np.log(self.M) / (q90 - q10)
