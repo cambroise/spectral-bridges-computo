@@ -136,8 +136,8 @@ $$
 Considering two centroïds, the normalized average of the difference betweenn Bridge and balls inertia (see [Appendix](#gain)) constitutes the basis of our affinity measure between two regions:
 $$
 \begin{aligned}
-\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2 + \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4},\\
-&=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k \cup \mathcal V_l} \alpha_i^2}{n_k+n_l},
+\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &= \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2 + \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4},\\
+&= \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k \cup \mathcal V_l} \alpha_i^2}{n_k+n_l},
 \end{aligned}
 $$
 where 
@@ -165,12 +165,30 @@ $$
 \|\boldsymbol p_{kl}(\boldsymbol x_i) - \boldsymbol \mu_{kl}\| = (1/2-\alpha_i) \| \boldsymbol \mu_k-\boldsymbol \mu_l \|.
 $$
 
-This distance is similar to the concept of margin in Support Vector Machine [@Cortes1995]. When the $\alpha_i$ values are small (close to zero since $\alpha_i\in [0,1/2]$), the margins to the hyperplane
-are large, indicating a low density between the classes. Conversely, if
+This distance is similar to the concept of margin in Support Vector Machine [@Cortes1995]. When the $\alpha_i$ values are small (close to zero since $\alpha_i\in [0,1/2]$), the margins to the hyperplane are large, indicating a low density between the classes. Conversely, if
 the margins are small, it suggests that the two classes may reside
 within the same densely populated region. Consequently, the sum of the
 $\alpha_i$ or $\alpha_i^2$ increases with the density of the region
-between the classes. 
+between the classes (See Figure @fig-interpretation). 
+
+
+
+::: {#fig-interpretation layout-ncol=2}
+![Margin with close centroids](figures/svm-interpretation-3.pdf)
+
+![Density of the $\alpha_i$ for close centroids](figures/histo-alphai-3.pdf)
+
+![Margin with well separated centroids](figures/svm-interpretation-10.pdf)
+
+![Density of the $\alpha_i$ for well separated centroids](figures/histo-alphai-10.pdf)
+
+
+Spectral Bridge affinity illustration involving two centroids. The bold black dots mark the centroids of each cluster, while the colored cells represent the final partition of data points. In subfigures (a) and (c), the length of each thick solid segment is proportional to $1/2 - \alpha_i$, whereas the thin grey segments are proportional to $\alpha_i$. Subfigures (b) and (d) depict the distribution of $\alpha_i$, showing the behavior when clusters are either closely positioned (a, b) or well-separated (c, d).
+:::
+
+
+
+
 
 Note that the criterion is local and indicates the relative difference in densities between the balls and the bridge, rather than evaluating a global score for the densities of the structures.
 
@@ -270,7 +288,6 @@ Determining the optimal value of $m$ using the eigengap is not straightforward. 
 Using this metric, we determine a near-optimal value for $m$ by maximizing the average $R$ across possible values of $m$. Additionally, the metric enhances robustness by running the algorithm with different random seeds and selecting the clustering result with the highest normalized eigengap.
 
 
-\newpage
 
 # Numerical experiments
 
@@ -466,9 +483,9 @@ $$
 Thus 
 $$
 \begin{aligned}
-B_{kl}- I_{kl} &=&  \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2 \|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2 + \sum_{i \mid t_i\in ]\frac{1}{2},1[} (1-t_i)^2 \|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2,\\
-\frac{B_{kl}- I_{kl}}{\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2  + \sum_{i \mid t_i\in ]\frac{1}{2},1[} (1-t_i)^2, \\
-\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &=& \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2 + \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4}.
+B_{kl}- I_{kl} &=  \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2 \|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2 + \sum_{i \mid t_i\in ]\frac{1}{2},1[} (1-t_i)^2 \|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2,\\
+\frac{B_{kl}- I_{kl}}{\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &= \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2  + \sum_{i \mid t_i\in ]\frac{1}{2},1[} (1-t_i)^2, \\
+\frac{B_{kl}- I_{kl}}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^2} &= \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_k \vert \boldsymbol{\mu}_l - \boldsymbol{\mu}_k \rangle_+^2 + \sum_{\boldsymbol{x_i} \in \mathcal V_l} \langle \boldsymbol{x_i} - \boldsymbol{\mu}_l \vert \boldsymbol{\mu}_k - \boldsymbol{\mu}_l\rangle_+^2}{(n_k+n_l)\|\boldsymbol \mu_k - \boldsymbol \mu_l\|^4}.
 \end{aligned}
 $$
 
