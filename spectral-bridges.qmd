@@ -46,7 +46,7 @@ editor:
 
 # Abstract
 
-In this paper, Spectral Bridges, a novel clustering algorithm, is introduced. This algorithm builds upon the traditional k-means and spectral clustering frameworks by subdividing data into small Voronoï regions, which are subsequently merged according to a connectivity measure. Drawing inspiration from Support Vector Machine's margin concept, a non-parametric clustering approach is proposed, building an affinity margin between each pair of Voronoï regions. This approach is characterized by minimal hyperparameter sensitivity and delineation of intricate, non-convex cluster structures.
+In this paper, Spectral Bridges, a novel clustering algorithm, is introduced. This algorithm builds upon the traditional k-means and spectral clustering frameworks by subdividing data into small Voronoï regions, which are subsequently merged according to a connectivity measure. Drawing inspiration from Support Vector Machine's margin concept, a non-parametric clustering approach is proposed, building an affinity margin between each pair of Voronoï regions. This approach delineates intricate, non-convex cluster structures and is robust to hyperparameter choice.
 
 The numerical experiments underscore Spectral Bridges as a fast, robust, and versatile tool for  clustering tasks spanning diverse domains. Its efficacy extends to large-scale scenarios encompassing both real-world and synthetic datasets. 
 
@@ -186,7 +186,7 @@ $$
 To allow points with large margin to dominate and make the algorithm more robust to noise and outliers we consider the following exponential transformation:
 $$
 \tilde{a}_{kl} = g(a_{kl})=\exp(\gamma\sqrt{a_{kl}}).
-$$
+$${#eq-scaling}
 
 where $\gamma$ is a scaling factor. This factor is set to ensure a large enough separation between the final coefficients. This factor is determined by the equation:
 $$
@@ -251,8 +251,24 @@ In spectral clustering, the time complexity is usually dominated by the eigen-de
 
 ![Spectral clustering](figures/spectral-briges-3-4.pdf)
 
-Illustration of the Spectral bridges algorithm with the Iris dataset (first principal plane). Vector quantization (Step 1 of  @alg-spectral-bridges), Affinity computation (Step 2 of  @alg-spectral-bridges), Spectral clustering and spreading (Step 3-4 of  @alg-spectral-bridges).
+Illustration of the Spectral Bridges algorithm with the Iris dataset (first principal plane). The bold red dots represent the centroids of the clusters, while the colored cells indicate the final partition of the data points. Vector quantization (Step 1 of @alg-spectral-bridges), Affinity computation (Step 2 of @alg-spectral-bridges), Spectral clustering and spreading (Step 3-4 of @alg-spectral-bridges).
 :::
+
+
+## Hyperparameter settings
+
+The proposed algorithm requires three input parameters: the number of clusters $K$, the number of Voronoï regions $m$, and a scaling parameter for the spectral clustering phase.
+
+Model selection in non-parametric settings is challenging due to the absence of predefined model parameters. It relies heavily on data-driven approaches. Metrics like the Gap Statistic [@tibshirani2001estimating] and the Laplacian eigengap [@von2007tutorial] are potential tools for hyperparameter selection.
+
+We propose a method for choosing the scaling parameter (see Equation @eq-scaling) that yields stable results. Selecting both $m$, the number of Voronoï regions, and $K$, the number of clusters, is difficult. We address this by adopting a heuristic: first, choose $K$, then determine $m$ using a modified Laplacian eigengap.
+
+If $K$ represents the true number of clusters, the affinity matrix resembles a graph adjacency matrix with $K$ connected components. This configuration is characterized by an eigengap at the $K$th eigenvalue. In Self-Tuning Spectral Clustering [@zelnik2004self], the eigengap $\lambda_{K+1} - \lambda_K$ is used to evaluate clustering quality for $K$ clusters. Following a similar strategy, and assuming $K$ is known, the Laplacian eigengap at the $K$th eigenvalue can select $m$, with the scaling parameter fixed.
+
+Determining the optimal value of $m$ using the eigengap is not straightforward. As the affinity matrix dimension increases, the number of eigenvalues grows, reducing gaps between them. This makes direct comparisons unreliable. To address this, we use the ratio $R = (\lambda_{K+1} - \lambda_K) / \lambda_{K+1}$. This metric is bounded between 0 and 1 and measures the relative difference between consecutive eigenvalues. It facilitates meaningful comparisons across different values of $m$. A value of $R$ close to 1 suggests high clustering quality, whereas lower values indicate weaker performance.
+
+Using this metric, we determine a near-optimal value for $m$ by maximizing the average $R$ across possible values of $m$. Additionally, the metric enhances robustness by running the algorithm with different random seeds and selecting the clustering result with the highest normalized eigengap.
+
 
 \newpage
 
@@ -260,7 +276,7 @@ Illustration of the Spectral bridges algorithm with the Iris dataset (first prin
 
 In this section, the results obtained from testing the Spectral Bridges algorithm on various datasets, both small and large scale, including real-world and well-known synthetic datasets, are presented. These experiments assess the accuracy, time and space complexity, ease of use, robustness, and adaptability of our algorithm. We compare Spectral Bridges (SB) against several state-of-the-art methods, including k-means++ (KM) [@macqueen1967some; @arthur2007kmeanspp], Expectation-Maximization (EM) [@dempster1977maximum], Ward Clustering (WC) [@ward1963hierarchical], and DBSCAN (DB) [@ester1996density]. This comparison establishes baselines across centroid-based clustering algorithms, hierarchical methods, and density-based methods. 
 
-The algorithms are evaluated on both raw and PCA-processed data with varying dimensionality. For synthetic datasets, Gaussian and/or uniform noise is introduced to assess the robustness of the algorithm.
+The algorithms are evaluated on both raw and Principal Component Analysis processed (PCA-processed) data with varying dimensionality. For synthetic datasets, Gaussian and/or uniform noise is introduced to assess the robustness of the algorithm.
 
 ## Datasets
 
@@ -300,14 +316,14 @@ To evaluate the performance of the clustering algorithm, the Adjusted Rand Index
 
 All experiments were conducted on an Archlinux machine with Linux 6.9.3 Kernel, 8GB of RAM, and an AMD Ryzen 3 7320U processor.
 
-## Hyperparameter settings
+## Sensitivity to hyperparameters
 
 The hyperparameters of the Spectral Bridges algorithm were based on the size of each dataset, $n$, and the number of clusters, $K$.
-A larger number of clusters typically suggests that a higher value for the number of Voronoï regions is optimal. Conversely, using a high number of Voronoï regions for a small dataset might result in nearly empty regions that do not adequately represent any local structure.
 
-A good yet not very precise way of setting the number of Voronoï regions $m$ is to observe the Within Cluster Sum of Squares (WCSS) or inertia in a way akin to the elbow method. Since $m$ should be set to a value strictly greater than $K$, we plot the WCSS for varying values of $m$, and find a value such that the WCSS-$m$ relationship becomes quasi-linear, which often occurs after the inflection point.
+To better grasp the sensitivity regarding to $m$, the number of Voronoï cells, Spectral Bridges was run on the PCA $h = 32$ embedded MNIST dataset with varying values of $m \in \{10, 120, 230, 340, 450, 560, 670, 780, 890, 1000 \}$. The case $m = 10$ is equivalent to the k-means++ algorithm. ARI and NMI scores are recorded over 20 consecutive iterations and subsequently plotted. As shown by @fig-m-vs-score, the accuracy seems to be consistently increasing with values of $m$, with the largest observed gap occurring between values of $m = 10$ and $m = 120$, and flattening thereafter, indicating a tremendous improvement over the classical k-means++ framework even for empirically suboptimal hyperparameter values. 
 
-By adjusting $m$ in this manner, we aim to balance the need for detailed representation with the risk of overfitting, ensuring that each Voronoï region meaningfully captures the underlying data distribution. The sensitivity or lack thereof is illustrated later on by @fig-m-vs-score.
+
+![ARI and NMI scores of Spectral Bridges with varying values of $m$.](figures/nodes_vs_score.pdf){#fig-m-vs-score}
 
 For other algorithms, such as DBSCAN, labels were used to determine the best hyperparameter values to compare our method against the "best case scenario", thus putting  the Spectral Bridges algorithm at a voluntary disadvantage.
 
@@ -338,7 +354,7 @@ Furthermore, the proposed algorithm was also tested on the same MNIST dataset af
 
 Note the Spectral Bridges is substantially better than other traditional methods and shines even with quite simple dimension reduction algorithms.
 
-For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with PCA, $h = 32$ and 250 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.
+For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), $h = 32$ and 250 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.
 
 ::: {#fig-MNIST layout-ncol=3}
 
@@ -392,19 +408,6 @@ To evaluate the noise robustness of the algorithm, two experimental setups were 
 Three representations of the algorithm's predicted cluster centers are displayed as colored dots, with each point of the Impossible dataset shown as a small black dot. In the left graph, the dataset is unmodified. In the center graph, 250 uniformly distributed samples were added. In the right graph, Gaussian noise perturbations with $\sigma = 0.1$ were applied.
 
 :::
-
-## Hyperparameter values effect on accuracy
-
-The proposed algorithm inputs three parameters: the number of clusters $K$, the number of Voronoï regions $m$, as well as a scaling parameter used in the spectral clustering phase. 
-
-Metrics such as the Gap Statistic could be a possible approach to determine the number of clusters. Comparing the total within-cluster variation for different numbers of clusters with that expected under a null reference distribution of the data, the optimal value of $K$ is where the observed clustering yields the largest gap statistic.
-Another approach could leverage the Laplacian's eingengap, as in traditional spectral clustering [@von2007tutorial]. $K$ would here be chosen to maximize the difference between the $(K + 1)$-th and $K$-th eigenvalues sorted in ascending order.
-
-The same technique could also be used to estimate the optimal value for the scaling parameter; other methods involve local scaling which empirically does not translate well to the bridge affinity [@zelnik2004self].
-
-At last, the choice of the the number of Voronoï regions $m$ has been discussed previously. To better grasp the sensitivity regarding this parameter, Spectral Bridges was run on the PCA $h = 32$ embedded MNIST dataset with varying values of $m \in \{10, 120, 230, 340, 450, 560, 670, 780, 890, 1000 \}$. The case $m = 10$ is equivalent to the k-means++ algorithm. ARI and NMI scores are recorded over 20 consecutive iterations and subsequently plotted. As shown by @fig-m-vs-score, the accuracy seems to be consistently increasing with values of $m$, with the largest observed gap occurring between values of $m = 10$ and $m = 120$, and flattening thereafter, indicating a tremendous improvement over the classical k-means++ framework even for empirically suboptimal hyperparameter values.
-
-![ARI and NMI scores of Spectral Bridges with varying values of $m$.](figures/nodes_vs_score.pdf){#fig-m-vs-score}
 
 # Conclusive remarks
 
