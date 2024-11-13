@@ -1,6 +1,6 @@
 ---
 title: "Spectral Bridges"
-subtitle: "Scalable Spectral Clustering free from hyperparameters"
+subtitle: "Scalable Spectral Clustering from vector quantization"
 date: 19/06/2024
 date-modified: last-modified
 author:
@@ -183,7 +183,7 @@ between the classes (See Figure @fig-interpretation).
 ![Density of the $\alpha_i$ for well separated centroids](figures/histo-alphai-10.pdf)
 
 
-Spectral Bridge affinity illustration involving two centroids. The bold black dots mark the centroids of each cluster, while the colored cells represent the final partition of data points. In subfigures (a) and (c), the length of each thick solid segment is proportional to $1/2 - \alpha_i$, whereas the thin grey segments are proportional to $\alpha_i$. Subfigures (b) and (d) depict the distribution of $\alpha_i$, showing the behavior when clusters are either closely positioned (a, b) or well-separated (c, d).
+Spectral Bridge affinity illustration involving two centroids. The bold black dots mark the centroids of each cluster, while the colored cells represent the final partition of data points. In subfigures (a) and (c), the length of each black  segment is proportional to $1/2 - \alpha_i$, whereas the thin grey segments are proportional to $\alpha_i$. Subfigures (b) and (d) depict the distribution of $\alpha_i$, showing the behavior when clusters are either closely positioned (a, b) or well-separated (c, d).
 :::
 
 
