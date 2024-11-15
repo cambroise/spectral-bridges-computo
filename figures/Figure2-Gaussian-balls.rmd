@@ -80,17 +80,17 @@ nk<-table(y_hat)
 df_points <- data.frame(x1 = X[, 1], x2 = X[, 2], y = factor(y_hat))
 
 balls <- ggplot(grille, aes(x = x1, y = x2)) +
-  geom_segment(data = df_points[df_points$x1 > mu0[1] & df_points$x1 < mu1[1], ], aes(x = x1, y = x2, xend = ifelse(x1 < (mu0[1] + mu1[1]) / 2, mu0[1], mu1[1]), yend = x2), color = 'grey', linetype = 'solid',size=1) +
+  geom_segment(data = df_points[df_points$x1 > mu0[1] & df_points$x1 < mu1[1], ], aes(x = x1, y = x2, xend = ifelse(x1 < (mu0[1] + mu1[1]) / 2, mu0[1], mu1[1]), yend = x2), color = 'black', linetype = 'solid',size=0.5) +
   geom_point(aes(x = mu0[1], y = mu0[2]), color = 'black', size = 5) +
   geom_point(aes(x = mu1[1], y = mu1[2]), color = 'black', size = 5) +
-  geom_raster(aes(fill = eta_value > 0.5), alpha = 0.2) +
+  geom_raster(aes(fill = eta_value > 0.5), alpha = 0.1) +
   scale_fill_manual(values = c("green", "red")) +
   geom_contour(aes(z = eta_value), breaks = c(0.5), color = "black", size = 1) +
  # geom_segment(aes(x = mu0[1], y = mu0[2], xend = mu1[1], yend = mu1[2]), color = 'blue') +
-  geom_segment(data = df_points[df_points$x1 > mu0[1] & df_points$x1 < mu1[1], ], aes(x = x1, y = x2, xend = (mu0[1] + mu1[1]) / 2, yend = x2), color = 'black', linetype = 'solid',size=0.5) +
+  geom_segment(data = df_points[df_points$x1 > mu0[1] & df_points$x1 < mu1[1], ], aes(x = x1, y = x2, xend = (mu0[1] + mu1[1]) / 2, yend = x2), color = 'grey', linetype = 'dotted',size=1) +
     geom_point(data = df_points, aes(x = x1, y = x2, color = factor(y_hat)), size = 2) +
   scale_color_manual(values = c("green", "red")) +
-  coord_fixed() +
+  coord_equal(ratio = 1) +
   theme_minimal() +
   theme(
     panel.grid = element_blank(),
@@ -100,7 +100,7 @@ balls <- ggplot(grille, aes(x = x1, y = x2)) +
     axis.ticks = element_blank(),
     axis.line = element_blank()
   )
-pdf("svn-interpretation-3.pdf")
+pdf("svm-interpretation-3.pdf",height=5,width=5)
 print(balls)
 dev.off()
 ```
@@ -135,7 +135,7 @@ dev.off()
       affinity[l,k] <- sqrt(sum(alphai^2) / (nk[k] + nk[l]))
       affinity[k,l] <- affinity[l,k]
     }
-
+affinity=round(affinity[1,2],digits=2)
 print(affinity)
 ```
 
@@ -150,10 +150,144 @@ histograms <- lapply(names(alphas_list), function(name) {
   ggplot(data, aes(x = alpha)) +
     geom_density(fill = "grey", alpha = 0.5) + xlim(0, 0.5) +
     labs(x = expression(alpha[i]), y = "Frequence") +
-    theme_minimal()
+    theme_minimal() +
+    coord_fixed(ratio=1/10,clip = "on")+
+    annotate("text", x = 0.25, y = Inf, label = bquote(frac(1,n[k]+n[l])*sum(alpha[i]^2) == .(affinity)), color = "grey", size = 5, hjust = 0.5, vjust = 2, angle = 0)
 })
 
-pdf("histo-alphai-3.pdf")
+pdf("histo-alphai-3.pdf",width = 5, height = 5)
 grid.arrange(grobs = histograms, ncol = 2)
 dev.off()
 ```
+# Paramètres de simulation
+```{r}
+n <- 200
+prob <- c(1/2,1/2)
+mu0 <- c(0,0)
+Sigma0 <- matrix(c(1, 0, 0, 1), 2, 2)
+mu1 <- c(10,0)
+Sigma1 <- matrix(c(1, 0, 0, 1), 2, 2)
+
+MU<-rbind(mu0,mu1)
+
+# Générer les données
+sim_data <- simulate_data(n, prob, mu0, Sigma0, mu1, Sigma1)
+X <- sim_data$X
+y <- sim_data$y
+```
+
+## Frontière entre 2 centroides
+
+```{r}
+library(mvtnorm)
+library(ggplot2)
+
+# Définir la fonction eta
+eta <- function(x, mu0, Sigma0, mu1, Sigma1, pi1 = 1/2) {
+  posterior <- (pi1 * dmvnorm(x, mean = mu1, sigma = Sigma1)) /
+    (pi1 * dmvnorm(x, mean = mu1, sigma = Sigma1) + (1 - pi1) * dmvnorm(x, mean = mu0, sigma = Sigma0))
+  return(posterior)
+}
+
+# Générer la grille
+create_grid <- function(X, length_out = 100) {
+  x1 <- seq(min(X[, 1]), max(X[, 1]), length.out = length_out)
+  x2 <- seq(min(X[, 2]), max(X[, 2]), length.out = length_out)
+  expand.grid(x1 = x1, x2 = x2)
+}
+
+grille <- create_grid(X)
+
+# Évaluer eta sur la grille
+evaluate_eta <- function(grille, mu0, Sigma0, mu1, Sigma1) {
+  grille$eta_value <- apply(data.frame(grille), 1, function(x) eta(x, mu0, Sigma0, mu1, Sigma1))
+  grille
+}
+grille <- evaluate_eta(grille, mu0, Sigma0, mu1, Sigma1)
+y_hat <- (apply(X, 1, function(x) eta(x, mu0, Sigma0, mu1, Sigma1)) > 0.5) +1
+nk<-table(y_hat)
+
+# Création des points pour le graphique
+df_points <- data.frame(x1 = X[, 1], x2 = X[, 2], y = factor(y_hat))
+
+balls <- ggplot(grille, aes(x = x1, y = x2)) +
+  geom_segment(data = df_points[df_points$x1 > mu0[1] & df_points$x1 < mu1[1], ], aes(x = x1, y = x2, xend = ifelse(x1 < (mu0[1] + mu1[1]) / 2, mu0[1], mu1[1]), yend = x2), color = 'black', linetype = 'solid',size=0.5) +
+  geom_point(aes(x = mu0[1], y = mu0[2]), color = 'black', size = 5) +
+  geom_point(aes(x = mu1[1], y = mu1[2]), color = 'black', size = 5) +
+  geom_raster(aes(fill = eta_value > 0.5), alpha = 0.1) +
+  scale_fill_manual(values = c("green", "red")) +
+  geom_contour(aes(z = eta_value), breaks = c(0.5), color = "black", size = 1) +
+ # geom_segment(aes(x = mu0[1], y = mu0[2], xend = mu1[1], yend = mu1[2]), color = 'blue') +
+  geom_segment(data = df_points[df_points$x1 > mu0[1] & df_points$x1 < mu1[1], ], aes(x = x1, y = x2, xend = (mu0[1] + mu1[1]) / 2, yend = x2), color = 'grey', linetype = 'dotted',size=1) +
+    geom_point(data = df_points, aes(x = x1, y = x2, color = factor(y_hat)), size = 2) +
+  scale_color_manual(values = c("green", "red")) +
+  coord_equal(ratio = 2) +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text = element_blank(),
+    axis.ticks = element_blank(),
+    axis.line = element_blank()
+  )
+pdf("svm-interpretation-10.pdf",height=5,width=5)
+print(balls)
+dev.off()
+```
+
+
+## Computation of the $\alpha_i$
+
+```{r}
+# 2. Affinity computation
+  ###################################
+  # Centering of X
+  X.centered <- as.matrix(do.call(rbind, lapply(1:n, function(i) {
+    X[i, ] - MU[y_hat[i], ]
+  })))
+
+  # Pre-computation of distances between centers
+  n_cells<-nrow(MU)
+  dist_centers <- as.matrix(dist(MU))
+
+  # Affinity
+  affinity<-matrix(0,n_cells,n_cells)
+  alphas_list <- list()
+  for (l in 1:(n_cells-1))
+    for (k in (l+1):n_cells){
+      distkl2 <- dist_centers[k, l]^2
+      centered_k <- X.centered[y_hat == k, ]
+      centered_l <- X.centered[y_hat == l, ]
+      alpha_kl <- pmax(0, (MU[l, ] - MU[k, ]) %*% t(centered_k)) / distkl2
+      alpha_lk <- pmax(0, (MU[k, ] - MU[l, ]) %*% t(centered_l)) / distkl2
+      alphai <- c(alpha_kl, alpha_lk)
+      alphas_list[[paste(k, l, sep = "-")]] <- alphai
+      affinity[l,k] <- sqrt(sum(alphai^2) / (nk[k] + nk[l]))
+      affinity[k,l] <- affinity[l,k]
+    }
+affinity=round(affinity[1,2],digits=2)
+print(affinity)
+```
+
+## Histogramme des $\alpha_i$
+
+```{r}
+library(gridExtra)
+
+# Générer les histogrammes des alpha_i pour chaque couple k, l
+histograms <- lapply(names(alphas_list), function(name) {
+  data <- data.frame(alpha = alphas_list[[name]])
+  ggplot(data, aes(x = alpha)) +
+    geom_density(fill = "grey", alpha = 0.5) + xlim(0, 0.5) +
+    labs(x = expression(alpha[i]), y = "Frequence") +
+    theme_minimal() +
+    coord_fixed(ratio=1/30,clip = "on")+
+    annotate("text", x = 0.25, y = Inf, label = bquote(frac(1,n[k]+n[l])*sum(alpha[i]^2) == .(affinity)), color = "grey", size = 5, hjust = 0.5, vjust = 2, angle = 0)
+})
+
+pdf("histo-alphai-10.pdf",width = 5, height = 5)
+grid.arrange(grobs = histograms, ncol = 2)
+dev.off()
+```
+
