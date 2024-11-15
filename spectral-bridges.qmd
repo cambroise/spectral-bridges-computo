@@ -172,7 +172,6 @@ $\alpha_i$ or $\alpha_i^2$ increases with the density of the region
 between the classes (See Figure @fig-interpretation). 
 
 
-
 ::: {#fig-interpretation layout-ncol=2}
 ![Margin with close centroids](figures/svm-interpretation-3.pdf)
 
@@ -187,35 +186,43 @@ Spectral Bridge affinity illustration involving two centroids. The bold black do
 :::
 
 
-
-
-
 Note that the criterion is local and indicates the relative difference in densities between the balls and the bridge, rather than evaluating a global score for the densities of the structures.
 
-Eventually, we define the bridge affinity between centroids $k$
-and $l$ as: 
+Eventually, we define the bridge affinity between centroids $k$ and $l$ as the square root of the variance gain:
 $$
-a_{kl}=
+a_{kl} =
 \begin{cases}
-0, & \text{ if } k=l,\\
- \frac{\sum_{\boldsymbol{x_i} \in \mathcal V_k \cup \mathcal V_l} \alpha_i^2}{n_k+n_l}, & \text{otherwise}.
+0, & \text{if } k = l, \\
+\sqrt{\frac{\sum_{\boldsymbol{x_i} \in \mathcal{V}_k \cup \mathcal{V}_l} \alpha_i^2}{n_k + n_l}}, & \text{otherwise}.
 \end{cases}
-$$ 
+$$
+
+The inclusion of the square root redefines the variance affinity measure. Rather than using the squared Euclidean norm, the affinity is interpreted as the ratio of the standard deviation to the length of the segment connecting two centroids. 
+
+This concept can be generalized by introducing the $p$-bridge affinity for any $p \geq 1$:
+$$
+a_{p, kl} =
+\begin{cases}
+0, & \text{if } k = l, \\
+\left(\frac{\sum_{\boldsymbol{x_i} \in \mathcal{V}_k \cup \mathcal{V}_l} \alpha_i^p}{n_k + n_l}\right)^{1/p}, & \text{otherwise}.
+\end{cases}
+$$
+
+Both definitions are equivalent when $p = 2$. For $p = 1$, the affinity aligns directly with the SVM model previously discussed.
+
 To allow points with large margin to dominate and make the algorithm more robust to noise and outliers we consider the following exponential transformation:
 $$
-\tilde{a}_{kl} = g(a_{kl})=\exp(\gamma\sqrt{a_{kl}}).
+\tilde{a}_{kl} = g(a_{kl})=\exp(\gamma a_{kl}).
 $${#eq-scaling}
 
 where $\gamma$ is a scaling factor. This factor is set to ensure a large enough separation between the final coefficients. This factor is determined by the equation:
 $$
-\gamma = \frac{log(𝑀)}{\sqrt{q_{90}} - \sqrt{q_{10}}}
+\gamma = \frac{log(𝑀)}{q_{90} - q_{10}}
 $$
 
 where $q_{10}$ and $q_{90}$ are respectively the 10th and 90th percentiles of the original affinity matrix and $M > 1$. Thus, since the transformation is order-preserving, the 90th percentile of the newly constructed matrix is $M$ times greater than the 10th percentile. By default, $M$ is arbitrarily set to a large value of $10^4$.
 
-The inclusion of the square root can be understood as redefining the affinity measure. Instead of considering the variance and the squared Euclidean norm, we interpret the affinity as the ratio between the standard deviation and the length of the segment connecting two centroids.
-
-This regularization is crucial: with a bounded affinity metric, exponentiation enhances the separation between low and high-density regions, controlled by a scaling parameter, as in traditional spectral clustering. Redefining the metric with a square root helps mitigate a converse issue, where machine error can cause numerical instability when solving the Laplacian eigenproblem, especially if values become too large. Since the range of affinity values can become too wide when the initial ratio between the largest and smallest non-zero unscaled bridge affinities is high, applying the square root reduces the maximum values in the affinity matrix while preserving the metric's interpretability and distance-like properties; importantly, this adjustment is not intended for outlier detection.
+This regularization is crucial: with a bounded affinity metric, exponentiation enhances the separation between low and high-density regions, controlled by a scaling parameter, as in traditional spectral clustering. Redefining the metric with a square root (or power $1/p$ for the generalized affinity) helps mitigate a converse issue, where machine error can cause numerical instability when solving the Laplacian eigenproblem, especially if values become too large. Since the range of affinity values can become too wide when the initial ratio between the largest and smallest non-zero unscaled bridge affinities is high. This transformation reduces the maximum values in the affinity matrix while preserving the metric's interpretability and distance-like properties; importantly, this adjustment is not intended for outlier detection.
 
 ## Algorithm
 
@@ -291,7 +298,7 @@ Using this metric, we determine a near-optimal value for $m$ by maximizing the a
 
 # Numerical experiments
 
-In this section, the results obtained from testing the Spectral Bridges algorithm on various datasets, both small and large scale, including real-world and well-known synthetic datasets, are presented. These experiments assess the accuracy, time and space complexity, ease of use, robustness, and adaptability of our algorithm. We compare Spectral Bridges (SB) against several state-of-the-art methods, including k-means++ (KM) [@macqueen1967some; @arthur2007kmeanspp], Expectation-Maximization (EM) [@dempster1977maximum], Ward Clustering (WC) [@ward1963hierarchical], and DBSCAN (DB) [@ester1996density]. This comparison establishes baselines across centroid-based clustering algorithms, hierarchical methods, and density-based methods. 
+In this section, the results obtained from testing the Spectral Bridges algorithm on various datasets, both small and large scale, including real-world and well-known synthetic datasets, are presented. These experiments assess the accuracy, time and space complexity, ease of use, robustness, and adaptability of our algorithm. We compare Spectral Bridges (SB) against several state-of-the-art methods, including k-means++ (KM) [@macqueen1967some; @arthur2007kmeanspp], Expectation-Maximization (EM) [@dempster1977maximum], Ward Clustering (WC) [@ward1963hierarchical], DBSCAN (DB) [@ester1996density] and GIT [@gao2021git]. This comparison establishes baselines across centroid-based clustering algorithms, hierarchical methods, and density-based methods. 
 
 The algorithms are evaluated on both raw and Principal Component Analysis processed (PCA-processed) data with varying dimensionality. For synthetic datasets, Gaussian and/or uniform noise is introduced to assess the robustness of the algorithm.
 
@@ -359,15 +366,15 @@ Average time taken per model fit.
 
 ## Accuracy
 
-The algorithm's accuracy was first evaluated on the MNIST dataset. Metrics were collected to compare our method with k-means++, EM, and Ward clustering. Metric were estimated by taking the empirical average over 10 consecutive runs with a random seed set for reproducibility purposes.
+The algorithm's accuracy was first evaluated on the MNIST dataset. Metrics were collected to compare our method with k-means++, EM, and Ward clustering. Metrics were estimated by computing the empirical average over 10 consecutive runs for each method. Due to limited computational resources, we randomly selected a sample of 20,000 data points (one-third of the total) for each run, on which all algorithms were trained and tested. To ensure reproducibility, a fixed random seed was set at the beginning of all scripts. Note, however, that this does not imply centroids were initialized identically for centroid based methods, as these may vary according to the implementation of each tested algorithm.
 
 Let $h$ denote the embedding dimension of the dataset. Spectral Bridges was tested both on the raw MNIST dataset without preprocessing ($h = 784$) and after reducing its dimension using PCA to $h \in \{8, 16, 32, 64\}$ (see @fig-mnist-pca-scores).
 
-![ARI and NMI scores of k-means++ (blue), EM (green), Ward Clustering (red), and Spectral Bridges (purple) on PCA embedding and full MNIST.](figures/mnist_pca_summary.pdf){#fig-mnist-pca-scores}
+![ARI and NMI scores of k-means++ (pink), EM (green), Ward Clustering (red), GIT (blue), and Spectral Bridges (purple) on PCA embedding and full MNIST.](figures/mnist_pca_summary.pdf){#fig-mnist-pca-scores}
 
-Furthermore, the proposed algorithm was also tested on the same MNIST dataset after reducing its dimension to $h \in \{2, 4, 8, 16\}$ with UMAP [@McInnes2018], one of the most advanced non-linear dimension reduction algorithm (see @fig-mnist-umap-scores).
+Furthermore, the proposed algorithm was also tested on the same MNIST dataset after reducing its dimension to $h \in \{2, 4, 8, 16\}$ using UMAP [@McInnes2018], a state-of-the-art non-linear dimension reduction algorithm (see @fig-mnist-umap-scores). To further improve the clustering performance of Spectral Bridges, the `fit_select` method was employed. This method effectively trains the algorithm with multiple initializations and selects the one with the largest normalized eigengap (refer to the **Hyperparameter settings** section).
 
-![ARI and NMI scores of k-means++ (blue), EM (green), Ward Clustering (red), and Spectral Bridges (purple) on UMAP embedding](figures/mnist_umap_summary.pdf){#fig-mnist-umap-scores}
+![ARI and NMI scores of k-means++ (pink), EM (green), Ward Clustering (red), GIT (blue), Spectral Bridges (purple) on UMAP embedding](figures/mnist_umap_summary.pdf){#fig-mnist-umap-scores}
 
 Note the Spectral Bridges is substantially better than other traditional methods and shines even with quite simple dimension reduction algorithms.
 
@@ -537,12 +544,13 @@ for i in range(self.n_nodes):
     dists = np.einsum("ij,ij->i", segments, segments)
     dists[i] = 1
 
-    projs = sgemm(1.0, X_centered[i], segments, trans_b=True) / dists
-    np.clip(projs, 0, None, out=projs)
+    projs = sgemm(1.0, X_centered[i], segments, trans_b=True)
+    np.clip(projs / dists, 0, None, out=projs)
+    projs = np.power(projs, self.p)
 
-    affinity[i] = np.einsum("ij,ij->j", projs, projs)
+    affinity[i] = projs.sum(axis=0)
 
-affinity = np.sqrt((affinity + affinity.T) / counts)
+affinity = np.power((affinity + affinity.T) / counts, 1 / self.p)
 affinity -= 0.5 * affinity.max()
 
 #Scale and exponentiate
