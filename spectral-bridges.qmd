@@ -1,6 +1,6 @@
 ---
 title: "Spectral Bridges"
-subtitle: "Scalable Spectral Clustering from vector quantization"
+subtitle: "Scalable Spectral Clustering Based on Vector Quantization"
 date: 19/06/2024
 date-modified: last-modified
 author:
