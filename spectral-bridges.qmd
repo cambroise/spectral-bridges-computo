@@ -386,7 +386,8 @@ Let $h$ denote the embedding dimension of the dataset. Spectral Bridges was test
 
 ![ARI and NMI scores of k-means++ (pink), EM (green), Ward Clustering (red), GIT (blue), and Spectral Bridges (purple) on PCA embedding and full MNIST.](figures/mnist_pca_summary.pdf){#fig-mnist-pca-scores}
 
-Furthermore, the proposed algorithm was also tested on the same MNIST dataset after reducing its dimension to $h \in \{2, 4, 8, 16\}$ using UMAP [@McInnes2018], a state-of-the-art non-linear dimension reduction algorithm (see @fig-mnist-umap-scores). To further improve the clustering performance of Spectral Bridges, the `fit_select` method was employed. This method effectively trains the algorithm with multiple initializations and selects the one with the largest normalized eigengap (refer to the **Hyperparameter settings** section).
+
+Additionally, the proposed algorithm was evaluated on the MNIST dataset after reducing its dimensionality to $h \in {2, 4, 8, 16}$ using UMAP [@McInnes2018], a state-of-the-art nonlinear dimensionality reduction technique (see @fig-mnist-umap-scores). To enhance the clustering performance of Spectral Bridges, the normalized eigengap method was applied. This approach trains the algorithm with multiple initializations and determines the optimal number of Voronoï cells by selecting the configuration with the largest normalized eigengap (refer to the **Hyperparameter settings section**).
 
 ![ARI and NMI scores of k-means++ (pink), EM (green), Ward Clustering (red), GIT (blue), Spectral Bridges (purple) on UMAP embedding](figures/mnist_umap_summary.pdf){#fig-mnist-umap-scores}
 
@@ -405,7 +406,7 @@ For visualization purposes, the predicted clusters by Spectral Bridges and k-mea
 UMAP projection of predicted clusters against the ground truth labels.
 :::
 
-The Spectral Bridges algorithm was also put to the test against the same competitors using scikit-learn's UCI Breast Cancer data. Once again, the `fit_select` method was used, and the presented algorithm performed well, although the advantage was not as obvious in this case (see @fig-cancer-scores). However, in none of our tests has it ranked worse than k-means++. The results are displayed as a boxplot generated from 200 iterations of each algorithm using a different seed, in order to better grasp the variability lying in the seed dependent nature of the k-means++, Expectation Maximization and Spectral Bridges algorithms.
+The Spectral Bridges algorithm was also put to the test against the same competitors using scikit-learn's UCI Breast Cancer data. Once again, the normalized eigengap method was used, and the presented algorithm performed well, although the advantage was not as obvious in this case (see @fig-cancer-scores). However, in none of our tests has it ranked worse than k-means++. The results are displayed as a boxplot generated from 200 iterations of each algorithm using a different seed, in order to better grasp the variability lying in the seed dependent nature of the k-means++, Expectation Maximization and Spectral Bridges algorithms.
 
 ![ARI and NMI scores of k-means++ (pink), EM (green), Ward Clustering (red), GIT (blue), and Spectral Bridges (purple) on the UCI Breast Cancer dataset.](figures/cancer_summary.pdf){#fig-cancer-scores}
 
