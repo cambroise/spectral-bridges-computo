@@ -393,7 +393,7 @@ Additionally, the proposed algorithm was evaluated on the MNIST dataset after re
 
 Note the Spectral Bridges is substantially better than other traditional methods and shines even with quite simple dimension reduction algorithms.
 
-For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), $h = 32$ and 250 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.
+For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), $h = 32$ and 500 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.
 
 ::: {#fig-MNIST layout-ncol=3}
 
