@@ -397,11 +397,11 @@ For visualization purposes, the predicted clusters by Spectral Bridges and k-mea
 
 ::: {#fig-MNIST layout-ncol=3}
 
-![k-means++](figures/KMumap.png)
+![k-means++](figures/KMumap.pdf)
 
-![Spectral Bridges](figures/SBumap.png)
+![Spectral Bridges](figures/SBumap.pdf)
 
-![Ground Truth](figures/GTumap.png)
+![Ground Truth](figures/GTumap.pdf)
 
 UMAP projection of predicted clusters against the ground truth labels.
 :::
