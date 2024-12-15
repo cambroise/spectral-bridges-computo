@@ -393,7 +393,7 @@ Additionally, the proposed algorithm was evaluated on the MNIST dataset after re
 
 Note the Spectral Bridges is substantially better than other traditional methods and shines even with quite simple dimension reduction algorithms.
 
-For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), $h = 32$ and 500 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.
+For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), $h = 32$ and 500 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality. Importantly, Spectral Bridges demonstrates remarkable accuracy, with the exception of the classes representing digits "4" and "9", which appear to have been merged.
 
 ::: {#fig-MNIST layout-ncol=3}
 
@@ -534,10 +534,10 @@ Notice that the Python code is significantly faster than the R code.
 #| echo: true
 #| eval: false
 
-#Initialize the matrix as empty
+# Initialize the matrix as empty
 affinity = np.empty((self.n_nodes, self.n_nodes))
 
-#Center each region
+# Center each region
 X_centered = [
     np.array(
         X[kmeans.labels_ == i] - kmeans.cluster_centers_[i],
@@ -547,11 +547,11 @@ X_centered = [
     for i in range(self.n_nodes)
 ]
 
-#Cardinal calculation
+# Cardinal calculation
 counts = np.array([X_centered[i].shape[0] for i in range(self.n_nodes)])
 counts = counts[None, :] + counts[:, None]
 
-#Calculate the affinity
+# Calculate the affinity
 for i in range(self.n_nodes):
     segments = np.asfortranarray(
         kmeans.cluster_centers_ - kmeans.cluster_centers_[i]
@@ -568,7 +568,7 @@ for i in range(self.n_nodes):
 affinity = np.power((affinity + affinity.T) / counts, 1 / self.p)
 affinity -= 0.5 * affinity.max()
 
-#Scale and exponentiate
+# Scale and exponentiate
 q10, q90 = np.quantile(affinity, [0.1, 0.9])
 
 gamma = np.log(self.M) / (q90 - q10)
