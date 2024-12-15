@@ -387,7 +387,7 @@ Let $h$ denote the embedding dimension of the dataset. Spectral Bridges was test
 ![ARI and NMI scores of k-means++ (pink), EM (green), Ward Clustering (red), GIT (blue), and Spectral Bridges (purple) on PCA embedding and full MNIST.](figures/mnist_pca_summary.pdf){#fig-mnist-pca-scores}
 
 
-Additionally, the proposed algorithm was evaluated on the MNIST dataset after reducing its dimensionality to $h \in {2, 4, 8, 16}$ using UMAP [@McInnes2018], a state-of-the-art nonlinear dimensionality reduction technique (see @fig-mnist-umap-scores). To enhance the clustering performance of Spectral Bridges, the normalized eigengap method was applied. This approach trains the algorithm with multiple initializations and determines the optimal number of Voronoï cells by selecting the configuration with the largest normalized eigengap (refer to the **Hyperparameter settings section**).
+Additionally, the proposed algorithm was evaluated on the MNIST dataset after reducing its dimensionality to $h \in \{2, 4, 8, 16\}$ using UMAP [@McInnes2018], a state-of-the-art nonlinear dimensionality reduction technique (see @fig-mnist-umap-scores). To enhance the clustering performance of Spectral Bridges, the normalized eigengap method was applied. This approach trains the algorithm with multiple initializations and determines the optimal number of Voronoï cells by selecting the configuration with the largest normalized eigengap (refer to the **Hyperparameter settings section**).
 
 ![ARI and NMI scores of k-means++ (pink), EM (green), Ward Clustering (red), GIT (blue), Spectral Bridges (purple) on UMAP embedding](figures/mnist_umap_summary.pdf){#fig-mnist-umap-scores}
 
