@@ -266,7 +266,7 @@ ISSN 2824-7795</p>
       <div>
       <div class="quarto-title-meta-heading">Modified</div>
       <div class="quarto-title-meta-contents">
-        <p class="date-modified">December 12, 2024</p>
+        <p class="date-modified">December 15, 2024</p>
       </div>
     </div>
       
@@ -513,7 +513,7 @@ a_{p, kl} =
 <h2 data-number="3.2" class="anchored" data-anchor-id="algorithm"><span class="header-section-number">3.2</span> Algorithm</h2>
 <p>The Spectral Bridges algorithm first identifies local clusters to define Voronoï regions, computes edges with affinity weights between these regions, and ultimately cuts edges between regions with low inter-region density to determine the final clusters (see <a href="#alg-spectral-bridges" class="quarto-xref">Algorithm 1</a> and <a href="#fig-steps" class="quarto-xref">Figure&nbsp;3</a>).</p>
 <p>In spectral clustering, the time complexity is usually dominated by the eigen-decomposition step, which is <span class="math inline">O(n^3)</span>. However, in the case of Spectral Bridges, the k-means algorithm has a time complexity of <span class="math inline">O(n \times m \times d)</span>. For datasets with large <span class="math inline">n</span>, this can be more significant than the <span class="math inline">O(m^3)</span> time complexity of the Spectral Bridges eigen-decomposition. As for the affinity matrix construction, there are <span class="math inline">m^2</span> coefficients to be calculated. Each <span class="math inline">a_{kl}</span> coefficient requires the computation of <span class="math inline">n_k + n_l</span> dot products as well as the norm <span class="math inline">\| \boldsymbol \mu_k-\boldsymbol \mu_l \|</span>, the latter often being negligeable. Assuming that the Voronoï regions are roughly balanced in cardinality, we have <span class="math inline">n_k \approx \frac{n}{m}</span>. Since <span class="math inline">m</span> should always be less than <span class="math inline">n</span>, therefore <span class="math inline">\frac{n}{m} &gt; 1</span> and the time complexity of the affinity matrix is <span class="math inline">O(\frac{n}{m} \times m^2 \times d) = O(n \times m \times d)</span> given the acceptable range of values for <span class="math inline">m</span>. Nonetheless, this is rarely the bottleneck.</p>
-<div id="alg-spectral-bridges" class="pseudocode-container quarto-float" data-line-number-punc=":" data-no-end="false" data-comment-delimiter="//" data-caption-prefix="Algorithm" data-line-number="true" data-pseudocode-number="1" data-indent-size="1.2em">
+<div id="alg-spectral-bridges" class="pseudocode-container quarto-float" data-pseudocode-number="1" data-line-number-punc=":" data-no-end="false" data-caption-prefix="Algorithm" data-comment-delimiter="//" data-line-number="true" data-indent-size="1.2em">
 <div class="pseudocode">
 \begin{algorithm} \caption{Spectral Bridges} \begin{algorithmic} \Procedure{SpectralBridges}{$X, k, m$} \Comment{$X$: input dataset, $k$: number of clusters, $m$: number of Voronoï regions} \State \textbf{Step 1: Vector Quantization} \State $\text{centroids}, \text{voronoiRegions} \gets$ \Call{KMeans}{$X, m$} \Comment{Initial centroids and Voronoi regions using k-means++} \State \textbf{Step 2: Affinity Computation} \State $A = \{g(a_{kl})\}_{kl} \gets$ \Call{Affinity}{$X, \text{centroids}, \text{voronoiRegions}$} \Comment{Compute affinity matrix $A$} \State \textbf{Step 3: Spectral Clustering} \Comment{Assign each region to a cluster} \State $\text{labels} \gets$ \Call{SpectralClustering}{$A, k$} \State \textbf{Step 4: Propagate} \Comment{Assign each data point to the cluster of its region} \State $\text{clusters} \gets$ \Call{Propagate}{$X, \text{labels}, \text{voronoiRegions}$} \State \Return $\text{clusters}$ \Comment{Return cluster labels for data points in $X$} \EndProcedure \end{algorithmic} \end{algorithm}
 </div>
@@ -735,7 +735,7 @@ Figure&nbsp;7: ARI and NMI scores of k-means++ (pink), EM (green), Ward Clusteri
 </figure>
 </div>
 <p>Note the Spectral Bridges is substantially better than other traditional methods and shines even with quite simple dimension reduction algorithms.</p>
-<p>For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see <a href="#fig-MNIST" class="quarto-xref">Figure&nbsp;8</a>). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), <span class="math inline">h = 32</span> and 500 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.</p>
+<p>For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see <a href="#fig-MNIST" class="quarto-xref">Figure&nbsp;8</a>). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), <span class="math inline">h = 32</span> and 500 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality. Importantly, Spectral Bridges demonstrates remarkable accuracy, with the exception of the classes representing digits “4” and “9”, which appear to have been merged.</p>
 <div id="fig-MNIST" class="quarto-layout-panel">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-MNIST-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -1033,10 +1033,10 @@ B_{kl}- I_{kl} &amp;=  \sum_{i \mid t_i\in ]0,\frac{1}{2}[} t_i^2 \|\boldsymbol 
 Listing&nbsp;1: Python code for affinity matrix computation
 </figcaption>
 <div aria-describedby="lst-code-affinity-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div class="sourceCode cell-code" id="lst-code-affinity"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="lst-code-affinity-1"><a href="#lst-code-affinity-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Initialize the matrix as empty</span></span>
+<div class="sourceCode cell-code" id="lst-code-affinity"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="lst-code-affinity-1"><a href="#lst-code-affinity-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize the matrix as empty</span></span>
 <span id="lst-code-affinity-2"><a href="#lst-code-affinity-2" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.empty((<span class="va">self</span>.n_nodes, <span class="va">self</span>.n_nodes))</span>
 <span id="lst-code-affinity-3"><a href="#lst-code-affinity-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-4"><a href="#lst-code-affinity-4" aria-hidden="true" tabindex="-1"></a><span class="co">#Center each region</span></span>
+<span id="lst-code-affinity-4"><a href="#lst-code-affinity-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Center each region</span></span>
 <span id="lst-code-affinity-5"><a href="#lst-code-affinity-5" aria-hidden="true" tabindex="-1"></a>X_centered <span class="op">=</span> [</span>
 <span id="lst-code-affinity-6"><a href="#lst-code-affinity-6" aria-hidden="true" tabindex="-1"></a>    np.array(</span>
 <span id="lst-code-affinity-7"><a href="#lst-code-affinity-7" aria-hidden="true" tabindex="-1"></a>        X[kmeans.labels_ <span class="op">==</span> i] <span class="op">-</span> kmeans.cluster_centers_[i],</span>
@@ -1046,11 +1046,11 @@ Listing&nbsp;1: Python code for affinity matrix computation
 <span id="lst-code-affinity-11"><a href="#lst-code-affinity-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)</span>
 <span id="lst-code-affinity-12"><a href="#lst-code-affinity-12" aria-hidden="true" tabindex="-1"></a>]</span>
 <span id="lst-code-affinity-13"><a href="#lst-code-affinity-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-14"><a href="#lst-code-affinity-14" aria-hidden="true" tabindex="-1"></a><span class="co">#Cardinal calculation</span></span>
+<span id="lst-code-affinity-14"><a href="#lst-code-affinity-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Cardinal calculation</span></span>
 <span id="lst-code-affinity-15"><a href="#lst-code-affinity-15" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> np.array([X_centered[i].shape[<span class="dv">0</span>] <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes)])</span>
 <span id="lst-code-affinity-16"><a href="#lst-code-affinity-16" aria-hidden="true" tabindex="-1"></a>counts <span class="op">=</span> counts[<span class="va">None</span>, :] <span class="op">+</span> counts[:, <span class="va">None</span>]</span>
 <span id="lst-code-affinity-17"><a href="#lst-code-affinity-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-18"><a href="#lst-code-affinity-18" aria-hidden="true" tabindex="-1"></a><span class="co">#Calculate the affinity</span></span>
+<span id="lst-code-affinity-18"><a href="#lst-code-affinity-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate the affinity</span></span>
 <span id="lst-code-affinity-19"><a href="#lst-code-affinity-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="va">self</span>.n_nodes):</span>
 <span id="lst-code-affinity-20"><a href="#lst-code-affinity-20" aria-hidden="true" tabindex="-1"></a>    segments <span class="op">=</span> np.asfortranarray(</span>
 <span id="lst-code-affinity-21"><a href="#lst-code-affinity-21" aria-hidden="true" tabindex="-1"></a>        kmeans.cluster_centers_ <span class="op">-</span> kmeans.cluster_centers_[i]</span>
@@ -1067,7 +1067,7 @@ Listing&nbsp;1: Python code for affinity matrix computation
 <span id="lst-code-affinity-32"><a href="#lst-code-affinity-32" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">=</span> np.power((affinity <span class="op">+</span> affinity.T) <span class="op">/</span> counts, <span class="dv">1</span> <span class="op">/</span> <span class="va">self</span>.p)</span>
 <span id="lst-code-affinity-33"><a href="#lst-code-affinity-33" aria-hidden="true" tabindex="-1"></a>affinity <span class="op">-=</span> <span class="fl">0.5</span> <span class="op">*</span> affinity.<span class="bu">max</span>()</span>
 <span id="lst-code-affinity-34"><a href="#lst-code-affinity-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="lst-code-affinity-35"><a href="#lst-code-affinity-35" aria-hidden="true" tabindex="-1"></a><span class="co">#Scale and exponentiate</span></span>
+<span id="lst-code-affinity-35"><a href="#lst-code-affinity-35" aria-hidden="true" tabindex="-1"></a><span class="co"># Scale and exponentiate</span></span>
 <span id="lst-code-affinity-36"><a href="#lst-code-affinity-36" aria-hidden="true" tabindex="-1"></a>q10, q90 <span class="op">=</span> np.quantile(affinity, [<span class="fl">0.1</span>, <span class="fl">0.9</span>])</span>
 <span id="lst-code-affinity-37"><a href="#lst-code-affinity-37" aria-hidden="true" tabindex="-1"></a></span>
 <span id="lst-code-affinity-38"><a href="#lst-code-affinity-38" aria-hidden="true" tabindex="-1"></a>gamma <span class="op">=</span> np.log(<span class="va">self</span>.M) <span class="op">/</span> (q90 <span class="op">-</span> q10)</span>
@@ -1999,7 +1999,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-393"><a href="#cb3-393" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-394"><a href="#cb3-394" aria-hidden="true" tabindex="-1"></a>Note the Spectral Bridges is substantially better than other traditional methods and shines even with quite simple dimension reduction algorithms.</span>
 <span id="cb3-395"><a href="#cb3-395" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-396"><a href="#cb3-396" aria-hidden="true" tabindex="-1"></a>For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), $h = 32$ and 500 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality.</span>
+<span id="cb3-396"><a href="#cb3-396" aria-hidden="true" tabindex="-1"></a>For visualization purposes, the predicted clusters by Spectral Bridges and k-means++ were projected using UMAP to compare them against the ground truth labels and to better understand the cluster shapes (see @fig-MNIST). Note this projection was not used in the experiments as an embedding, and thus does not play any role in the clustering process itself. As a matter of fact, the embedding used was obtained with Principal Componant Analysis (PCA), $h = 32$ and 500 Voronoï regions. Note that the label colors match the legend only in the case of the ground truth data. Indeed, the ordering of the labels have no significance on clustering quality. Importantly, Spectral Bridges demonstrates remarkable accuracy, with the exception of the classes representing digits "4" and "9", which appear to have been merged.</span>
 <span id="cb3-397"><a href="#cb3-397" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-398"><a href="#cb3-398" aria-hidden="true" tabindex="-1"></a>::: {#fig-MNIST layout-ncol=3}</span>
 <span id="cb3-399"><a href="#cb3-399" aria-hidden="true" tabindex="-1"></a></span>
@@ -2140,10 +2140,10 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-534"><a href="#cb3-534" aria-hidden="true" tabindex="-1"></a><span class="in">#| echo: true</span></span>
 <span id="cb3-535"><a href="#cb3-535" aria-hidden="true" tabindex="-1"></a><span class="in">#| eval: false</span></span>
 <span id="cb3-536"><a href="#cb3-536" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-537"><a href="#cb3-537" aria-hidden="true" tabindex="-1"></a><span class="in">#Initialize the matrix as empty</span></span>
+<span id="cb3-537"><a href="#cb3-537" aria-hidden="true" tabindex="-1"></a><span class="in"># Initialize the matrix as empty</span></span>
 <span id="cb3-538"><a href="#cb3-538" aria-hidden="true" tabindex="-1"></a><span class="in">affinity = np.empty((self.n_nodes, self.n_nodes))</span></span>
 <span id="cb3-539"><a href="#cb3-539" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-540"><a href="#cb3-540" aria-hidden="true" tabindex="-1"></a><span class="in">#Center each region</span></span>
+<span id="cb3-540"><a href="#cb3-540" aria-hidden="true" tabindex="-1"></a><span class="in"># Center each region</span></span>
 <span id="cb3-541"><a href="#cb3-541" aria-hidden="true" tabindex="-1"></a><span class="in">X_centered = [</span></span>
 <span id="cb3-542"><a href="#cb3-542" aria-hidden="true" tabindex="-1"></a><span class="in">    np.array(</span></span>
 <span id="cb3-543"><a href="#cb3-543" aria-hidden="true" tabindex="-1"></a><span class="in">        X[kmeans.labels_ == i] - kmeans.cluster_centers_[i],</span></span>
@@ -2153,11 +2153,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-547"><a href="#cb3-547" aria-hidden="true" tabindex="-1"></a><span class="in">    for i in range(self.n_nodes)</span></span>
 <span id="cb3-548"><a href="#cb3-548" aria-hidden="true" tabindex="-1"></a><span class="in">]</span></span>
 <span id="cb3-549"><a href="#cb3-549" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-550"><a href="#cb3-550" aria-hidden="true" tabindex="-1"></a><span class="in">#Cardinal calculation</span></span>
+<span id="cb3-550"><a href="#cb3-550" aria-hidden="true" tabindex="-1"></a><span class="in"># Cardinal calculation</span></span>
 <span id="cb3-551"><a href="#cb3-551" aria-hidden="true" tabindex="-1"></a><span class="in">counts = np.array([X_centered[i].shape[0] for i in range(self.n_nodes)])</span></span>
 <span id="cb3-552"><a href="#cb3-552" aria-hidden="true" tabindex="-1"></a><span class="in">counts = counts[None, :] + counts[:, None]</span></span>
 <span id="cb3-553"><a href="#cb3-553" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-554"><a href="#cb3-554" aria-hidden="true" tabindex="-1"></a><span class="in">#Calculate the affinity</span></span>
+<span id="cb3-554"><a href="#cb3-554" aria-hidden="true" tabindex="-1"></a><span class="in"># Calculate the affinity</span></span>
 <span id="cb3-555"><a href="#cb3-555" aria-hidden="true" tabindex="-1"></a><span class="in">for i in range(self.n_nodes):</span></span>
 <span id="cb3-556"><a href="#cb3-556" aria-hidden="true" tabindex="-1"></a><span class="in">    segments = np.asfortranarray(</span></span>
 <span id="cb3-557"><a href="#cb3-557" aria-hidden="true" tabindex="-1"></a><span class="in">        kmeans.cluster_centers_ - kmeans.cluster_centers_[i]</span></span>
@@ -2174,7 +2174,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-568"><a href="#cb3-568" aria-hidden="true" tabindex="-1"></a><span class="in">affinity = np.power((affinity + affinity.T) / counts, 1 / self.p)</span></span>
 <span id="cb3-569"><a href="#cb3-569" aria-hidden="true" tabindex="-1"></a><span class="in">affinity -= 0.5 * affinity.max()</span></span>
 <span id="cb3-570"><a href="#cb3-570" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-571"><a href="#cb3-571" aria-hidden="true" tabindex="-1"></a><span class="in">#Scale and exponentiate</span></span>
+<span id="cb3-571"><a href="#cb3-571" aria-hidden="true" tabindex="-1"></a><span class="in"># Scale and exponentiate</span></span>
 <span id="cb3-572"><a href="#cb3-572" aria-hidden="true" tabindex="-1"></a><span class="in">q10, q90 = np.quantile(affinity, [0.1, 0.9])</span></span>
 <span id="cb3-573"><a href="#cb3-573" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-574"><a href="#cb3-574" aria-hidden="true" tabindex="-1"></a><span class="in">gamma = np.log(self.M) / (q90 - q10)</span></span>
